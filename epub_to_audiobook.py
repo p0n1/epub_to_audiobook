@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 import requests
 from typing import List, Tuple
 from datetime import datetime, timedelta
+from mutagen.id3 import ID3, TIT2, TPE1, TALB, TRCK, ID3NoHeaderError
+
 
 subscription_key = os.environ.get("MS_TTS_KEY")
 region = os.environ.get("MS_TTS_REGION")
@@ -85,6 +87,20 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
         audio.write(response.content)
 
 
+def add_id3_tags(file_path: str, title: str, artist: str, album: str, track_number: int):
+    try:
+        id3_tags = ID3(file_path)
+    except ID3NoHeaderError:
+        id3_tags = ID3()
+
+    id3_tags.add(TIT2(encoding=3, text=title))
+    id3_tags.add(TPE1(encoding=3, text=artist))
+    id3_tags.add(TALB(encoding=3, text=album))
+    id3_tags.add(TRCK(encoding=3, text=str(track_number)))
+
+    id3_tags.save(file_path)
+
+
 def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book)
@@ -92,6 +108,14 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
     os.makedirs(output_folder, exist_ok=True)
 
     access_token = get_access_token()
+
+    # Get the book title and author from metadata or use fallback values
+    book_title = "Untitled"
+    author = "Unknown"
+    if book.get_metadata('DC', 'title'):
+        book_title = book.get_metadata('DC', 'title')[0][0]
+    if book.get_metadata('DC', 'creator'):
+        author = book.get_metadata('DC', 'creator')[0][0]
 
     with requests.Session() as session:
         for idx, (title, text) in enumerate(chapters, start=1):
@@ -104,6 +128,9 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             text_to_speech(session, text, output_file,
                            voice_name, language, access_token)
+            # Add ID3 tags to the generated MP3 file
+            add_id3_tags(output_file, title=title, artist=author,
+                         album=book_title, track_number=idx)
 
 
 def main():
