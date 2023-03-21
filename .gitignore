@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+venv/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*.bak
+*.log
+*.cache
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# audio files
+audiobook_output/
