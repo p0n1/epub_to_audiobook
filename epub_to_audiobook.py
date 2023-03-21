@@ -1,5 +1,6 @@
 import os
 import re
+import io
 import argparse
 import html
 import ebooklib
@@ -8,7 +9,8 @@ from bs4 import BeautifulSoup
 import requests
 from typing import List, Tuple
 from datetime import datetime, timedelta
-from mutagen.id3 import ID3, TIT2, TPE1, TALB, TRCK, ID3NoHeaderError
+from mutagen.mp3 import MP3
+from mutagen.id3 import TIT2, TPE1, TALB, TRCK
 
 
 subscription_key = os.environ.get("MS_TTS_KEY")
@@ -65,40 +67,75 @@ def get_access_token() -> AccessToken:
     return AccessToken(access_token, expiry_time)
 
 
-def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken) -> None:
+def split_text(text: str, max_chars: int, language: str) -> List[str]:
+    if language.startswith("zh"):
+        chunks = [text[i:i + max_chars]
+                  for i in range(0, len(text), max_chars)]
+    else:
+        words = text.split()
+        chunks = []
+        current_chunk = ""
+
+        for word in words:
+            if len(current_chunk) + len(word) + 1 <= max_chars:
+                current_chunk += (" " if current_chunk else "") + word
+            else:
+                chunks.append(current_chunk)
+                current_chunk = word
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
+    print(f"Split text into {len(chunks)} chunks")
+    for i, chunk in enumerate(chunks, 1):
+        first_100 = chunk[:100]
+        last_100 = chunk[-100:] if len(chunk) > 100 else ""
+        print(
+            f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}")
+
+    return chunks
+
+
+def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> None:
     if access_token.is_expired():
         access_token = get_access_token()
 
-    escaped_text = html.escape(text)
-    ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
+    # Adjust this value based on your testing
+    max_chars = 1800 if language.startswith("zh") else 3000
 
-    headers = {
-        "Authorization": f"Bearer {access_token.token}",
-        "Content-Type": "application/ssml+xml",
-        "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
-        "User-Agent": "Python"
-    }
+    text_chunks = split_text(text, max_chars, language)
 
-    response = session.post(TTS_URL, headers=headers,
-                            data=ssml.encode('utf-8'))
-    response.raise_for_status()
+    audio_segments = []
 
-    with open(output_file, 'wb') as audio:
-        audio.write(response.content)
+    for chunk in text_chunks:
+        escaped_text = html.escape(chunk)
+        ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
 
+        headers = {
+            "Authorization": f"Bearer {access_token.token}",
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+            "User-Agent": "Python"
+        }
 
-def add_id3_tags(file_path: str, title: str, artist: str, album: str, track_number: int):
-    try:
-        id3_tags = ID3(file_path)
-    except ID3NoHeaderError:
-        id3_tags = ID3()
+        response = session.post(TTS_URL, headers=headers,
+                                data=ssml.encode('utf-8'))
+        response.raise_for_status()
 
-    id3_tags.add(TIT2(encoding=3, text=title))
-    id3_tags.add(TPE1(encoding=3, text=artist))
-    id3_tags.add(TALB(encoding=3, text=album))
-    id3_tags.add(TRCK(encoding=3, text=str(track_number)))
+        audio_segments.append(io.BytesIO(response.content))
 
-    id3_tags.save(file_path)
+    with open(output_file, "wb") as outfile:
+        for segment in audio_segments:
+            segment.seek(0)
+            outfile.write(segment.read())
+
+    # Add ID3 tags to the generated MP3 file
+    audio = MP3(output_file)
+    audio["TIT2"] = TIT2(encoding=3, text=title)
+    audio["TPE1"] = TPE1(encoding=3, text=author)
+    audio["TALB"] = TALB(encoding=3, text=book_title)
+    audio["TRCK"] = TRCK(encoding=3, text=str(idx))
+    audio.save()
 
 
 def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str) -> None:
@@ -126,11 +163,8 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             print(f"Converting chapter {idx}: {title}")
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
-            text_to_speech(session, text, output_file,
-                           voice_name, language, access_token)
-            # Add ID3 tags to the generated MP3 file
-            add_id3_tags(output_file, title=title, artist=author,
-                         album=book_title, track_number=idx)
+            text_to_speech(session, text, output_file, voice_name,
+                           language, access_token, title, author, book_title, idx)
 
 
 def main():
