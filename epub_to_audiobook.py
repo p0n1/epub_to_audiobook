@@ -154,13 +154,16 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
     if book.get_metadata('DC', 'creator'):
         author = book.get_metadata('DC', 'creator')[0][0]
 
+    # Filter out empty or very short chapters
+    chapters = [(title, text) for title, text in chapters if text.strip()]
+
     with requests.Session() as session:
         for idx, (title, text) in enumerate(chapters, start=1):
             if not title:
                 title = text[:60]
             print(f"Raw title: <{title}>")
             title = sanitize_title(title)
-            print(f"Converting chapter {idx}: {title}")
+            print(f"Converting chapter {idx}/{len(chapters)}: {title}")
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             text_to_speech(session, text, output_file, voice_name,
