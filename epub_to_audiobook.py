@@ -11,6 +11,12 @@ from typing import List, Tuple
 from datetime import datetime, timedelta
 from mutagen.mp3 import MP3
 from mutagen.id3 import TIT2, TPE1, TALB, TRCK
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s [%(levelname)s] %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger(__name__)
 
 
 subscription_key = os.environ.get("MS_TTS_KEY")
@@ -42,9 +48,9 @@ def extract_chapters(epub_book: ebooklib.epub.EpubBook) -> List[Tuple[str, str]]
             soup = BeautifulSoup(content, 'lxml')
             title = soup.title.string if soup.title else ''
             raw = soup.get_text(strip=False)
-            print(f"Raw text: <{raw[:100]}>")
+            logger.info(f"Raw text: <{raw[:100]}>")
             text = soup.get_text(separator=" ", strip=True)
-            print(f"Stripped text: <{text[:100]}>")
+            logger.info(f"Stripped text: <{text[:100]}>")
             chapters.append((title, text))
             soup.decompose()
     return chapters
@@ -86,11 +92,11 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
         if current_chunk:
             chunks.append(current_chunk)
 
-    print(f"Split text into {len(chunks)} chunks")
+    logger.info(f"Split text into {len(chunks)} chunks")
     for i, chunk in enumerate(chunks, 1):
         first_100 = chunk[:100]
         last_100 = chunk[-100:] if len(chunk) > 100 else ""
-        print(
+        logger.info(
             f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}")
 
     return chunks
@@ -161,9 +167,9 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
         for idx, (title, text) in enumerate(chapters, start=1):
             if not title:
                 title = text[:60]
-            print(f"Raw title: <{title}>")
+            logger.info(f"Raw title: <{title}>")
             title = sanitize_title(title)
-            print(f"Converting chapter {idx}/{len(chapters)}: {title}")
+            logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             text_to_speech(session, text, output_file, voice_name,
