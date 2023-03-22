@@ -118,9 +118,6 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
 
 
 def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> None:
-    if access_token.is_expired():
-        access_token = get_access_token()
-
     # Adjust this value based on your testing
     max_chars = 1800 if language.startswith("zh") else 3000
 
@@ -130,17 +127,20 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
 
     for i, chunk in enumerate(text_chunks, 1):
         escaped_text = html.escape(chunk)
-        logger.info(f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
+        logger.info(
+            f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
 
-        headers = {
-            "Authorization": f"Bearer {access_token.token}",
-            "Content-Type": "application/ssml+xml",
-            "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
-            "User-Agent": "Python"
-        }
-
         for retry in range(MAX_RETRIES):
+            if access_token.is_expired():
+                logger.info(f"access_token is expired, getting new one")
+                access_token = get_access_token()
+            headers = {
+                "Authorization": f"Bearer {access_token.token}",
+                "Content-Type": "application/ssml+xml",
+                "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+                "User-Agent": "Python"
+            }
             try:
                 response = session.post(TTS_URL, headers=headers,
                                         data=ssml.encode('utf-8'))
