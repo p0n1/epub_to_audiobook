@@ -128,8 +128,9 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
 
     audio_segments = []
 
-    for chunk in text_chunks:
+    for i, chunk in enumerate(text_chunks, 1):
         escaped_text = html.escape(chunk)
+        logger.info(f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
 
         headers = {
