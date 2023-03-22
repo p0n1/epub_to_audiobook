@@ -12,11 +12,15 @@ from datetime import datetime, timedelta
 from mutagen.mp3 import MP3
 from mutagen.id3 import TIT2, TPE1, TALB, TRCK
 import logging
+from time import sleep
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s [%(levelname)s] %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 logger = logging.getLogger(__name__)
+
+# Added max_retries constant
+MAX_RETRIES = 10
 
 
 subscription_key = os.environ.get("MS_TTS_KEY")
@@ -66,11 +70,22 @@ class AccessToken:
 
 
 def get_access_token() -> AccessToken:
-    response = requests.post(TOKEN_URL, headers=TOKEN_HEADERS)
-    response.raise_for_status()
-    access_token = str(response.text)
-    expiry_time = datetime.utcnow() + timedelta(minutes=9, seconds=30)
-    return AccessToken(access_token, expiry_time)
+    for retry in range(MAX_RETRIES):
+        try:
+            response = requests.post(TOKEN_URL, headers=TOKEN_HEADERS)
+            response.raise_for_status()
+            access_token = str(response.text)
+            expiry_time = datetime.utcnow() + timedelta(minutes=9, seconds=30)
+            return AccessToken(access_token, expiry_time)
+        except requests.exceptions.RequestException as e:
+            if retry < MAX_RETRIES - 1:
+                logger.warning(
+                    f"Network error while getting access token (attempt {retry + 1}): {e}")
+                sleep(2 ** retry)
+            else:
+                logger.error(
+                    f"Network error while getting access token (attempt {retry + 1}): {e}")
+                raise
 
 
 def split_text(text: str, max_chars: int, language: str) -> List[str]:
@@ -124,9 +139,21 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
             "User-Agent": "Python"
         }
 
-        response = session.post(TTS_URL, headers=headers,
-                                data=ssml.encode('utf-8'))
-        response.raise_for_status()
+        for retry in range(MAX_RETRIES):
+            try:
+                response = session.post(TTS_URL, headers=headers,
+                                        data=ssml.encode('utf-8'))
+                response.raise_for_status()
+                break
+            except requests.exceptions.RequestException as e:
+                if retry < MAX_RETRIES - 1:
+                    logger.warning(
+                        f"Network error while converting text to speech (attempt {retry + 1}): {e}")
+                    sleep(2 ** retry)
+                else:
+                    logger.error(
+                        f"Network error while converting text to speech (attempt {retry + 1}): {e}")
+                    raise
 
         audio_segments.append(io.BytesIO(response.content))
 
