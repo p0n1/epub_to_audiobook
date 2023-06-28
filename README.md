@@ -2,6 +2,8 @@
 
 This project provides a command-line tool to convert EPUB ebooks into audiobooks. It uses the [Microsoft Azure Text-to-Speech API](https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/rest-text-to-speech) to generate the audio for each chapter in the ebook. The output audio files are optimized for use with [Audiobookshelf](https://github.com/advplyr/audiobookshelf).
 
+*This project is developed with the help of ChatGPT.*
+
 ## Requirements
 
 - Python 3.6+
