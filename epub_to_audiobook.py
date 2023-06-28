@@ -117,7 +117,7 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
     return chunks
 
 
-def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> None:
+def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> AccessToken:
     # Adjust this value based on your testing
     max_chars = 1800 if language.startswith("zh") else 3000
 
@@ -170,6 +170,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     audio["TALB"] = TALB(encoding=3, text=book_title)
     audio["TRCK"] = TRCK(encoding=3, text=str(idx))
     audio.save()
+    return access_token
 
 
 def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str) -> None:
@@ -200,8 +201,8 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
-            text_to_speech(session, text, output_file, voice_name,
-                           language, access_token, title, author, book_title, idx)
+            access_token = text_to_speech(session, text, output_file, voice_name,
+                                          language, access_token, title, author, book_title, idx)
 
 
 def main():
