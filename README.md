@@ -82,13 +82,15 @@ This command will create a folder called `output_folder` and save the MP3 files 
 
 You can customize the voice and language used for the Text-to-Speech conversion by passing the `--voice_name` and `--language` options when running the script.
 
-To find the available voices and languages, consult the [Microsoft Azure Text-to-Speech documentation](https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support?tabs=tts#text-to-speech).
+Microsoft Azure offers a range of voices and languages for the Text-to-Speech service. For a list of available options, consult the [Microsoft Azure Text-to-Speech documentation](https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support?tabs=tts#text-to-speech). 
+
+You can also listen to samples of the available voices in the [Azure TTS Voice Gallery](https://speech.microsoft.com/portal/voicegallery) (sign in required) to help you choose the best voice for your audiobook.
 
 For example, if you want to use a British English female voice for the conversion, you can use the following command:
 
 ```bash
 python epub_to_audiobook.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
-```
+
 
 ## License
 
