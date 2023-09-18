@@ -44,7 +44,7 @@ def sanitize_title(title: str) -> str:
     return sanitized_title
 
 
-def extract_chapters(epub_book: ebooklib.epub.EpubBook) -> List[Tuple[str, str]]:
+def extract_chapters(epub_book: epub.EpubBook) -> List[Tuple[str, str]]:
     chapters = []
     for item in epub_book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
@@ -53,9 +53,12 @@ def extract_chapters(epub_book: ebooklib.epub.EpubBook) -> List[Tuple[str, str]]
             title = soup.title.string if soup.title else ''
             raw = soup.get_text(strip=False)
             logger.info(f"Raw text: <{raw[:100]}>")
-            text = soup.get_text(separator=" ", strip=True)
-            logger.info(f"Stripped text: <{text[:100]}>")
-            chapters.append((title, text))
+
+            # Remove excessive whitespaces and newline characters
+            cleaned_text = re.sub(r'\s+', ' ', raw).strip()
+            logger.info(f"Cleaned text: <{cleaned_text[:100]}>")
+
+            chapters.append((title, cleaned_text))
             soup.decompose()
     return chapters
 
