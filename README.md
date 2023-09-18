@@ -64,11 +64,11 @@ To convert an EPUB ebook to an audiobook, run the following command:
 python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_name>] [--language <language>]
 ```
 
-
 - `<input_file>`: Path to the EPUB file.
 - `<output_folder>`: Path to the output folder, where the audiobook files will be saved.
 - `--voice_name`: (Optional) Voice name for the Text-to-Speech service (default: en-US-GuyNeural). For Chinese ebooks, use zh-CN-YunyeNeural.
 - `--language`: (Optional) Language for the Text-to-Speech service (default: en-US).
+- `--preview`: (Optional) Enable preview mode. The script will not convert the text to speech. Instead, it will print the chapter index and titles. You can check the chapter details before sending out requests.
 
 Example:
 
