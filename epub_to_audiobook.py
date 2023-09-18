@@ -173,7 +173,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book)
 
@@ -199,6 +199,8 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             logger.info(f"Raw title: <{title}>")
             title = sanitize_title(title)
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
+            if preview:
+                continue
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             access_token = text_to_speech(session, text, output_file, voice_name,
@@ -213,10 +215,12 @@ def main():
                         help="Voice name for the text-to-speech service (default: en-US-GuyNeural). You can use zh-CN-YunyeNeural for Chinese ebooks.")
     parser.add_argument("--language", default="en-US",
                         help="Language for the text-to-speech service (default: en-US)")
+    parser.add_argument("--preview", action="store_true",
+                        help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
     args = parser.parse_args()
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language)
+                      args.voice_name, args.language, args.preview)
 
 
 if __name__ == "__main__":
