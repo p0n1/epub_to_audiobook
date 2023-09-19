@@ -37,10 +37,14 @@ TOKEN_HEADERS = {
 
 TTS_URL = f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1"
 
+MAGIC_BREAK_STRING = " @BRK# "  # blank is for text split
+
 
 def sanitize_title(title: str) -> str:
+    # replace MAGIC_BREAK_STRING with a blank space
+    title = title.replace(MAGIC_BREAK_STRING, " ")
     sanitized_title = re.sub(r"[^\w\s]", "", title, flags=re.UNICODE)
-    sanitized_title = re.sub(r"\s", "_", sanitized_title.strip())
+    sanitized_title = re.sub(r"\s+", "_", sanitized_title.strip())
     return sanitized_title
 
 
@@ -54,9 +58,18 @@ def extract_chapters(epub_book: epub.EpubBook) -> List[Tuple[str, str]]:
             raw = soup.get_text(strip=False)
             logger.info(f"Raw text: <{raw[:100]}>")
 
-            # Remove excessive whitespaces and newline characters
-            cleaned_text = re.sub(r'\s+', ' ', raw).strip()
-            logger.info(f"Cleaned text: <{cleaned_text[:100]}>")
+            # Replace excessive whitespaces and newline characters
+            cleaned_text = re.sub(r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
+            logger.info(f"Cleaned text step 1: <{cleaned_text[:100]}>")
+            cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
+            logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
+
+            # fill in the title if it's missing
+            if not title:
+                title = cleaned_text[:60]
+            logger.info(f"Raw title: <{title}>")
+            title = sanitize_title(title)
+            logger.info(f"Sanitized title: <{title}>")
 
             chapters.append((title, cleaned_text))
             soup.decompose()
@@ -120,7 +133,7 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
     return chunks
 
 
-def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> AccessToken:
+def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, break_duration: int, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> AccessToken:
     # Adjust this value based on your testing
     max_chars = 1800 if language.startswith("zh") else 3000
 
@@ -130,6 +143,9 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
 
     for i, chunk in enumerate(text_chunks, 1):
         escaped_text = html.escape(chunk)
+        # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
+        escaped_text = escaped_text.replace(
+            MAGIC_BREAK_STRING, f" <break time='{break_duration}ms' /> ")
         logger.info(
             f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
@@ -176,7 +192,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book)
 
@@ -197,17 +213,13 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
 
     with requests.Session() as session:
         for idx, (title, text) in enumerate(chapters, start=1):
-            if not title:
-                title = text[:60]
-            logger.info(f"Raw title: <{title}>")
-            title = sanitize_title(title)
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
             if preview:
                 continue
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             access_token = text_to_speech(session, text, output_file, voice_name,
-                                          language, access_token, title, author, book_title, idx)
+                                          language, break_duration, access_token, title, author, book_title, idx)
 
 
 def main():
@@ -220,10 +232,14 @@ def main():
                         help="Language for the text-to-speech service (default: en-US)")
     parser.add_argument("--preview", action="store_true",
                         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
+    parser.add_argument("--break_duration", default="1250",
+                        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.")
     args = parser.parse_args()
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview)
+                      args.voice_name, args.language, args.preview, args.break_duration)
+    logger.info("Done! 👍")
+    logger.info(f"args = {args}")
 
 
 if __name__ == "__main__":
