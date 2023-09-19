@@ -192,7 +192,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int, chapter_start: int, chapter_end: int) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book)
 
@@ -211,8 +211,29 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
     # Filter out empty or very short chapters
     chapters = [(title, text) for title, text in chapters if text.strip()]
 
+    logger.info(f"Chapters count: {len(chapters)}.")
+
+    # Check chapter start and end args
+    if chapter_start < 1 or chapter_start > len(chapters):
+        raise ValueError(
+            f"Chapter start index {chapter_start} is out of range. Check your input.")
+    if chapter_end < -1 or chapter_end > len(chapters):
+        raise ValueError(
+            f"Chapter end index {chapter_end} is out of range. Check your input.")
+    if chapter_end == -1:
+        chapter_end = len(chapters)
+    if chapter_start > chapter_end:
+        raise ValueError(
+            f"Chapter start index {chapter_start} is larger than chapter end index {chapter_end}. Check your input.")
+
+    logger.info(f"Converting chapters {chapter_start} to {chapter_end}.")
+
     with requests.Session() as session:
         for idx, (title, text) in enumerate(chapters, start=1):
+            if idx < chapter_start:
+                continue
+            if idx > chapter_end:
+                break
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
             if preview:
                 continue
@@ -234,10 +255,15 @@ def main():
                         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
     parser.add_argument("--break_duration", default="1250",
                         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.")
+    # add argument fro chapter start and end
+    parser.add_argument("--chapter_start", default=1, type=int,
+                        help="Chapter start index (default: 1, starting from 1)")
+    parser.add_argument("--chapter_end", default=-1, type=int,
+                        help="Chapter end index (default: -1, meaning to the last chapter)")
     args = parser.parse_args()
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview, args.break_duration)
+                      args.voice_name, args.language, args.preview, args.break_duration, args.chapter_start, args.chapter_end)
     logger.info("Done! 👍")
     logger.info(f"args = {args}")
 
