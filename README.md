@@ -66,17 +66,20 @@ python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_na
 
 - `<input_file>`: Path to the EPUB file.
 - `<output_folder>`: Path to the output folder, where the audiobook files will be saved.
-- `--voice_name`: (Optional) Voice name for the Text-to-Speech service (default: en-US-GuyNeural). For Chinese ebooks, use zh-CN-YunyeNeural.
-- `--language`: (Optional) Language for the Text-to-Speech service (default: en-US).
-- `--preview`: (Optional) Enable preview mode. The script will not convert the text to speech. Instead, it will print the chapter index and titles. You can check the chapter details before sending out requests.
+- `--voice_name`: (Optional) Voice name for the Text-to-Speech service. Default is `en-US-GuyNeural`. For Chinese ebooks, use `zh-CN-YunyeNeural`.
+- `--language`: (Optional) Language for the Text-to-Speech service. Default is `en-US`.
+- `--preview`: (Optional) Enable preview mode. In preview mode, the script won't convert the text to speech. Instead, it will display the chapter index and titles, allowing you to preview chapter details before processing.
+- `--break_duration`: (Optional) Break duration in milliseconds between different paragraphs or sections. Default is `1250`. Acceptable values range from 0 to 5000 milliseconds.
+- `--chapter_start`: (Optional) Chapter start index. Default is `1`, starting from the first chapter.
+- `--chapter_end`: (Optional) Chapter end index. Default is `-1`, which means it processes up to the last chapter.
 
-Example:
+**Example**:
 
 ```bash
 python epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder
 ```
 
-This command will create a folder called `output_folder` and save the MP3 files for each chapter in the ebook. You can then import the generated audio files into [Audiobookshelf](https://github.com/advplyr/audiobookshelf) or just play with any audio player you like.
+Executing the above command will generate a directory named `output_folder` and save the MP3 files for each chapter inside it. Once generated, you can import these audio files into [Audiobookshelf](https://github.com/advplyr/audiobookshelf) or play them with any audio player of your choice.
 
 ## Using with Docker
 
