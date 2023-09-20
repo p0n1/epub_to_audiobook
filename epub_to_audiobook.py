@@ -37,12 +37,13 @@ TOKEN_HEADERS = {
 
 TTS_URL = f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1"
 
-MAGIC_BREAK_STRING = " @BRK# "  # blank is for text split
+MAGIC_BREAK_STRING = " @BRK#"  # leading blank is for text split
 
 
 def sanitize_title(title: str) -> str:
     # replace MAGIC_BREAK_STRING with a blank space
-    title = title.replace(MAGIC_BREAK_STRING, " ")
+    # strip incase leading bank is missing
+    title = title.replace(MAGIC_BREAK_STRING.strip(), " ")
     sanitized_title = re.sub(r"[^\w\s]", "", title, flags=re.UNICODE)
     sanitized_title = re.sub(r"\s+", "_", sanitized_title.strip())
     return sanitized_title
@@ -56,18 +57,18 @@ def extract_chapters(epub_book: epub.EpubBook) -> List[Tuple[str, str]]:
             soup = BeautifulSoup(content, 'lxml')
             title = soup.title.string if soup.title else ''
             raw = soup.get_text(strip=False)
-            logger.info(f"Raw text: <{raw[:100]}>")
+            logger.debug(f"Raw text: <{raw[:100]}>")
 
             # Replace excessive whitespaces and newline characters
             cleaned_text = re.sub(r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
-            logger.info(f"Cleaned text step 1: <{cleaned_text[:100]}>")
+            logger.debug(f"Cleaned text step 1: <{cleaned_text[:100]}>")
             cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
             logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
 
             # fill in the title if it's missing
             if not title:
                 title = cleaned_text[:60]
-            logger.info(f"Raw title: <{title}>")
+            logger.debug(f"Raw title: <{title}>")
             title = sanitize_title(title)
             logger.info(f"Sanitized title: <{title}>")
 
@@ -142,13 +143,17 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     audio_segments = []
 
     for i, chunk in enumerate(text_chunks, 1):
+        logger.debug(
+            f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]")
         escaped_text = html.escape(chunk)
+        logger.debug(f"Escaped text: [{escaped_text}]")
         # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
         escaped_text = escaped_text.replace(
-            MAGIC_BREAK_STRING, f" <break time='{break_duration}ms' /> ")
+            MAGIC_BREAK_STRING.strip(), f" <break time='{break_duration}ms' /> ")  # strip incase leading bank is missing
         logger.info(
             f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
+        logger.debug(f"SSML: [{ssml}]")
 
         for retry in range(MAX_RETRIES):
             if access_token.is_expired():
@@ -255,12 +260,15 @@ def main():
                         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
     parser.add_argument("--break_duration", default="1250",
                         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.")
-    # add argument fro chapter start and end
     parser.add_argument("--chapter_start", default=1, type=int,
                         help="Chapter start index (default: 1, starting from 1)")
     parser.add_argument("--chapter_end", default=-1, type=int,
                         help="Chapter end index (default: -1, meaning to the last chapter)")
+    parser.add_argument("--log", default="INFO",
+                        help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL")
     args = parser.parse_args()
+
+    logger.setLevel(args.log)
 
     epub_to_audiobook(args.input_file, args.output_folder,
                       args.voice_name, args.language, args.preview, args.break_duration, args.chapter_start, args.chapter_end)

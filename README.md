@@ -72,6 +72,7 @@ python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_na
 - `--break_duration`: (Optional) Break duration in milliseconds between different paragraphs or sections. Default is `1250`. Acceptable values range from 0 to 5000 milliseconds.
 - `--chapter_start`: (Optional) Chapter start index. Default is `1`, starting from the first chapter.
 - `--chapter_end`: (Optional) Chapter end index. Default is `-1`, which means it processes up to the last chapter.
+- `--log`: (Optional) Sets the logging level. Default is `INFO`. All valid options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 
 **Example**:
 
