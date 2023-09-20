@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 # Added max_retries constant
-MAX_RETRIES = 10
+MAX_RETRIES = 12
 
 
 subscription_key = os.environ.get("MS_TTS_KEY")
@@ -134,7 +134,7 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
     return chunks
 
 
-def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, break_duration: int, access_token: AccessToken, title: str, author: str, book_title: str, idx: int) -> AccessToken:
+def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, break_duration: int, access_token: AccessToken, title: str, author: str, book_title: str, idx: int, output_format: str) -> AccessToken:
     # Adjust this value based on your testing
     max_chars = 1800 if language.startswith("zh") else 3000
 
@@ -162,7 +162,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
             headers = {
                 "Authorization": f"Bearer {access_token.token}",
                 "Content-Type": "application/ssml+xml",
-                "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+                "X-Microsoft-OutputFormat": output_format,
                 "User-Agent": "Python"
             }
             try:
@@ -173,12 +173,12 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
             except requests.exceptions.RequestException as e:
                 if retry < MAX_RETRIES - 1:
                     logger.warning(
-                        f"Network error while converting text to speech (attempt {retry + 1}): {e}")
+                        f"Error while converting text to speech (attempt {retry + 1}): {e}")
                     sleep(2 ** retry)
                 else:
                     logger.error(
-                        f"Network error while converting text to speech (attempt {retry + 1}): {e}")
-                    raise
+                        f"Error while converting text to speech (attempt {retry + 1}): {e}")
+                    raise e
 
         audio_segments.append(io.BytesIO(response.content))
 
@@ -197,7 +197,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int, chapter_start: int, chapter_end: int) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int, chapter_start: int, chapter_end: int, output_format: str) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book)
 
@@ -245,7 +245,7 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
 
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             access_token = text_to_speech(session, text, output_file, voice_name,
-                                          language, break_duration, access_token, title, author, book_title, idx)
+                                          language, break_duration, access_token, title, author, book_title, idx, output_format)
 
 
 def main():
@@ -256,6 +256,8 @@ def main():
                         help="Voice name for the text-to-speech service (default: en-US-GuyNeural). You can use zh-CN-YunyeNeural for Chinese ebooks.")
     parser.add_argument("--language", default="en-US",
                         help="Language for the text-to-speech service (default: en-US)")
+    parser.add_argument("--log", default="INFO",
+                        help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL")
     parser.add_argument("--preview", action="store_true",
                         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
     parser.add_argument("--break_duration", default="1250",
@@ -264,14 +266,14 @@ def main():
                         help="Chapter start index (default: 1, starting from 1)")
     parser.add_argument("--chapter_end", default=-1, type=int,
                         help="Chapter end index (default: -1, meaning to the last chapter)")
-    parser.add_argument("--log", default="INFO",
-                        help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL")
+    parser.add_argument("--output_format", default="audio-24khz-48kbitrate-mono-mp3", help="Output format for the text-to-speech service (default: audio-24khz-48kbitrate-mono-mp3). Support formats: audio-16khz-32kbitrate-mono-mp3 audio-16khz-64kbitrate-mono-mp3 audio-16khz-128kbitrate-mono-mp3 audio-24khz-48kbitrate-mono-mp3 audio-24khz-96kbitrate-mono-mp3 audio-24khz-160kbitrate-mono-mp3 audio-48khz-96kbitrate-mono-mp3 audio-48khz-192kbitrate-mono-mp3. See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs. Only mp3 is supported for now. Different formats will result in different audio quality and file size.")
+
     args = parser.parse_args()
 
     logger.setLevel(args.log)
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview, args.break_duration, args.chapter_start, args.chapter_end)
+                      args.voice_name, args.language, args.preview, args.break_duration, args.chapter_start, args.chapter_end, args.output_format)
     logger.info("Done! 👍")
     logger.info(f"args = {args}")
 

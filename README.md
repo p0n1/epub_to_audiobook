@@ -65,14 +65,25 @@ python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_na
 ```
 
 - `<input_file>`: Path to the EPUB file.
-- `<output_folder>`: Path to the output folder, where the audiobook files will be saved.
+- `<output_folder>`: Path to the output folder where the audiobook files will be saved.
 - `--voice_name`: (Optional) Voice name for the Text-to-Speech service. Default is `en-US-GuyNeural`. For Chinese ebooks, use `zh-CN-YunyeNeural`.
 - `--language`: (Optional) Language for the Text-to-Speech service. Default is `en-US`.
-- `--preview`: (Optional) Enable preview mode. In preview mode, the script won't convert the text to speech. Instead, it will display the chapter index and titles, allowing you to preview chapter details before processing.
-- `--break_duration`: (Optional) Break duration in milliseconds between different paragraphs or sections. Default is `1250`. Acceptable values range from 0 to 5000 milliseconds.
-- `--chapter_start`: (Optional) Chapter start index. Default is `1`, starting from the first chapter.
-- `--chapter_end`: (Optional) Chapter end index. Default is `-1`, which means it processes up to the last chapter.
-- `--log`: (Optional) Sets the logging level. Default is `INFO`. All valid options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
+- `--log`: (Optional) Specifies the logging level. Default is `INFO`. Options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
+- `--preview`: (Optional) Enable preview mode. In this mode, the script won't convert the text to speech but will instead display the chapter index and titles.
+- `--break_duration`: (Optional) Determines the break duration in milliseconds between different paragraphs or sections. Default is `1250`. Valid values range from 0 to 5000 milliseconds.
+- `--chapter_start`: (Optional) Designates the starting chapter index. Default is `1`.
+- `--chapter_end`: (Optional) Specifies the ending chapter index. Default is `-1`, meaning it will process up to the last chapter.
+- `--output_format`: (Optional) Determines the output format for the Text-to-Speech service. The default is `audio-24khz-48kbitrate-mono-mp3`. Supported formats include:
+  - `audio-16khz-32kbitrate-mono-mp3`
+  - `audio-16khz-64kbitrate-mono-mp3`
+  - `audio-16khz-128kbitrate-mono-mp3`
+  - `audio-24khz-48kbitrate-mono-mp3`
+  - `audio-24khz-96kbitrate-mono-mp3`
+  - `audio-24khz-160kbitrate-mono-mp3`
+  - `audio-48khz-96kbitrate-mono-mp3`
+  - `audio-48khz-192kbitrate-mono-mp3`
+  
+  For a detailed understanding of these formats, refer to [Microsoft's official documentation](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs). Note: Only mp3 is supported at the moment. Different formats lead to variations in audio quality and file size.
 
 **Example**:
 
