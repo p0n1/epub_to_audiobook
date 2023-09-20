@@ -70,6 +70,7 @@ python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_na
 - `--language`: (Optional) Language for the Text-to-Speech service. Default is `en-US`.
 - `--log`: (Optional) Specifies the logging level. Default is `INFO`. Options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 - `--preview`: (Optional) Enable preview mode. In this mode, the script won't convert the text to speech but will instead display the chapter index and titles.
+- `--newline_mode`: (Optional) Defines how new paragraphs are detected: `single` or `double`. Default is `double`, suitable for most ebooks. The 'single' mode detects paragraphs by one newline character and 'double' by two consecutive newlines.
 - `--break_duration`: (Optional) Determines the break duration in milliseconds between different paragraphs or sections. Default is `1250`. Valid values range from 0 to 5000 milliseconds.
 - `--chapter_start`: (Optional) Designates the starting chapter index. Default is `1`.
 - `--chapter_end`: (Optional) Specifies the ending chapter index. Default is `-1`, meaning it will process up to the last chapter.
@@ -121,7 +122,7 @@ The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directo
 - [Create a Speech resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices) in the Azure portal.
 - Get the Speech resource key and region. After your Speech resource is deployed, select **Go to resource** to view and manage keys. For more information about Cognitive Services resources, see [Get the keys for your resource](https://learn.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account#get-the-keys-for-your-resource).
 
-*Source: https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech#prerequisites*
+*Source: <https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech#prerequisites>*
 
 ## Customization of Voice and Language
 

@@ -49,7 +49,7 @@ def sanitize_title(title: str) -> str:
     return sanitized_title
 
 
-def extract_chapters(epub_book: epub.EpubBook) -> List[Tuple[str, str]]:
+def extract_chapters(epub_book: epub.EpubBook, newline_mode: str) -> List[Tuple[str, str]]:
     chapters = []
     for item in epub_book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
@@ -57,11 +57,18 @@ def extract_chapters(epub_book: epub.EpubBook) -> List[Tuple[str, str]]:
             soup = BeautifulSoup(content, 'lxml')
             title = soup.title.string if soup.title else ''
             raw = soup.get_text(strip=False)
-            logger.debug(f"Raw text: <{raw[:100]}>")
+            logger.debug(f"Raw text: <{raw[:]}>")
 
-            # Replace excessive whitespaces and newline characters
-            cleaned_text = re.sub(r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
-            logger.debug(f"Cleaned text step 1: <{cleaned_text[:100]}>")
+            # Replace excessive whitespaces and newline characters based on the mode
+            if newline_mode == 'single':
+                cleaned_text = re.sub(r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
+            elif newline_mode == 'double':
+                cleaned_text = re.sub(
+                    r'[\n]{2,}', MAGIC_BREAK_STRING, raw.strip())
+            else:
+                raise ValueError(f"Invalid newline mode: {newline_mode}")
+
+            logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
             cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
             logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
 
@@ -197,9 +204,9 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, break_duration: int, chapter_start: int, chapter_end: int, output_format: str) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, newline_mode: str, break_duration: int, chapter_start: int, chapter_end: int, output_format: str) -> None:
     book = epub.read_epub(input_file)
-    chapters = extract_chapters(book)
+    chapters = extract_chapters(book, newline_mode)
 
     os.makedirs(output_folder, exist_ok=True)
 
@@ -260,6 +267,8 @@ def main():
                         help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL")
     parser.add_argument("--preview", action="store_true",
                         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
+    parser.add_argument('--newline_mode', choices=['single', 'double'], default='double',
+                        help="Choose the mode of detecting new paragraphs: 'single' or 'double'. 'single' means a single newline character, while 'double' means two consecutive newline characters. (default: double, works for most ebooks but will detect less paragraphs for some ebooks)")
     parser.add_argument("--break_duration", default="1250",
                         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.")
     parser.add_argument("--chapter_start", default=1, type=int,
@@ -273,7 +282,7 @@ def main():
     logger.setLevel(args.log)
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview, args.break_duration, args.chapter_start, args.chapter_end, args.output_format)
+                      args.voice_name, args.language, args.preview, args.newline_mode, args.break_duration, args.chapter_start, args.chapter_end, args.output_format)
     logger.info("Done! 👍")
     logger.info(f"args = {args}")
 
