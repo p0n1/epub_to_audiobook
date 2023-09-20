@@ -116,6 +116,12 @@ Replace `$MS_TTS_KEY` and `$MS_TTS_REGION` with your Azure Text-to-Speech API cr
 
 The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directory in the Docker container. This allows the tool to read the input file and write the output files to your local file system.
 
+## User-Friendly Guide for Windows Users
+
+For Windows users, especially if you're not very familiar with command-line tools, we've got you covered. We understand the challenges and have created a guide specifically tailored for you.
+
+Check this [step by step guide](https://gist.github.com/p0n1/cba98859cdb6331cc1aab835d62e4fba) and leave a message if you encounter issues.
+
 ## How to Get Your Azure Cognitive Service Key?
 
 - Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
