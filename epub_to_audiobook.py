@@ -61,7 +61,8 @@ def extract_chapters(epub_book: epub.EpubBook, newline_mode: str) -> List[Tuple[
 
             # Replace excessive whitespaces and newline characters based on the mode
             if newline_mode == 'single':
-                cleaned_text = re.sub(r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
+                cleaned_text = re.sub(
+                    r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
             elif newline_mode == 'double':
                 cleaned_text = re.sub(
                     r'[\n]{2,}', MAGIC_BREAK_STRING, raw.strip())
@@ -112,14 +113,34 @@ def get_access_token() -> AccessToken:
                 raise
 
 
+def is_special_char(char: str) -> bool:
+    # Check if the character is a English letter, number or punctuation or a punctuation in Chinese, never split these characters.
+    ord_char = ord(char)
+    result = (ord_char >= 33 and ord_char <= 126) or (
+        char in "。，、？！：；“”‘’（）《》【】…—～·「」『』〈〉〖〗〔〕") or (
+            char in "∶")  # special unicode punctuation
+    logger.debug(
+        f"is_special_char> char={char}, ord={ord_char}, result={result}")
+    return result
+
+
 def split_text(text: str, max_chars: int, language: str) -> List[str]:
-    if language.startswith("zh"):
-        chunks = [text[i:i + max_chars]
-                  for i in range(0, len(text), max_chars)]
+    chunks = []
+    current_chunk = ""
+
+    if language.startswith("zh"):  # Chinese
+        for char in text:
+            if len(current_chunk) + 1 <= max_chars or is_special_char(char):
+                current_chunk += char
+            else:
+                chunks.append(current_chunk)
+                current_chunk = char
+
+        if current_chunk:
+            chunks.append(current_chunk)
+
     else:
         words = text.split()
-        chunks = []
-        current_chunk = ""
 
         for word in words:
             if len(current_chunk) + len(word) + 1 <= max_chars:
@@ -156,7 +177,7 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
         logger.debug(f"Escaped text: [{escaped_text}]")
         # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
         escaped_text = escaped_text.replace(
-            MAGIC_BREAK_STRING.strip(), f" <break time='{break_duration}ms' /> ")  # strip incase leading bank is missing
+            MAGIC_BREAK_STRING.strip(), f" <break time='{break_duration}ms' /> ")  # strip in case leading bank is missing
         logger.info(
             f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
