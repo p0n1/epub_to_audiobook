@@ -49,7 +49,7 @@ def sanitize_title(title: str) -> str:
     return sanitized_title
 
 
-def extract_chapters(epub_book: epub.EpubBook, newline_mode: str) -> List[Tuple[str, str]]:
+def extract_chapters(epub_book: epub.EpubBook, newline_mode: str, remove_endnotes: bool) -> List[Tuple[str, str]]:
     chapters = []
     for item in epub_book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
@@ -72,6 +72,11 @@ def extract_chapters(epub_book: epub.EpubBook, newline_mode: str) -> List[Tuple[
             logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
             cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
             logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
+            
+            #Removes endnote numbers
+            if remove_endnotes == True:
+                cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', '', cleaned_text)
+                logger.info(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
             # fill in the title if it's missing
             if not title:
@@ -225,9 +230,9 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, newline_mode: str, break_duration: int, chapter_start: int, chapter_end: int, output_format: str) -> None:
+def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, newline_mode: str, break_duration: int, chapter_start: int, chapter_end: int, output_format: str, remove_endnotes: bool, output_text: bool) -> None:
     book = epub.read_epub(input_file)
-    chapters = extract_chapters(book, newline_mode)
+    chapters = extract_chapters(book, newline_mode, remove_endnotes)
 
     os.makedirs(output_folder, exist_ok=True)
 
@@ -270,7 +275,12 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
             if preview:
                 continue
-
+            
+            if output_text:
+                text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
+                with open(text_file, "w") as file:
+                    file.write(text)
+            
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
             access_token = text_to_speech(session, text, output_file, voice_name,
                                           language, break_duration, access_token, title, author, book_title, idx, output_format)
@@ -297,13 +307,15 @@ def main():
     parser.add_argument("--chapter_end", default=-1, type=int,
                         help="Chapter end index (default: -1, meaning to the last chapter)")
     parser.add_argument("--output_format", default="audio-24khz-48kbitrate-mono-mp3", help="Output format for the text-to-speech service (default: audio-24khz-48kbitrate-mono-mp3). Support formats: audio-16khz-32kbitrate-mono-mp3 audio-16khz-64kbitrate-mono-mp3 audio-16khz-128kbitrate-mono-mp3 audio-24khz-48kbitrate-mono-mp3 audio-24khz-96kbitrate-mono-mp3 audio-24khz-160kbitrate-mono-mp3 audio-48khz-96kbitrate-mono-mp3 audio-48khz-192kbitrate-mono-mp3. See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs. Only mp3 is supported for now. Different formats will result in different audio quality and file size.")
+    parser.add_argument("--output_text", action="store_true", help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output foler specified.")
+    parser.add_argument("--remove_endnotes", action="store_true", help="This will remove endnote numbers from the end or middle of sentences. This is useful for academic books.")
 
     args = parser.parse_args()
 
     logger.setLevel(args.log)
 
     epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview, args.newline_mode, args.break_duration, args.chapter_start, args.chapter_end, args.output_format)
+                      args.voice_name, args.language, args.preview, args.newline_mode, args.break_duration, args.chapter_start, args.chapter_end, args.output_format, args.remove_endnotes, args.output_text)
     logger.info("Done! 👍")
     logger.info(f"args = {args}")
 
