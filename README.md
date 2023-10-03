@@ -70,8 +70,10 @@ python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_na
 - `--language`: (Optional) Language for the Text-to-Speech service. Default is `en-US`.
 - `--log`: (Optional) Specifies the logging level. Default is `INFO`. Options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
 - `--preview`: (Optional) Enable preview mode. In this mode, the script won't convert the text to speech but will instead display the chapter index and titles.
+- `--output_text`: (Optional) Enable text output mode. In this mode, the script will export the full text of each chapter the folder specified in the output_folder argument.
 - `--newline_mode`: (Optional) Defines how new paragraphs are detected: `single` or `double`. Default is `double`, suitable for most ebooks. The 'single' mode detects paragraphs by one newline character and 'double' by two consecutive newlines.
 - `--break_duration`: (Optional) Determines the break duration in milliseconds between different paragraphs or sections. Default is `1250`. Valid values range from 0 to 5000 milliseconds.
+- `--remove_endnotes`: (Optional) This will remove all numerical endnotes from the middle or end of sentences.
 - `--chapter_start`: (Optional) Designates the starting chapter index. Default is `1`.
 - `--chapter_end`: (Optional) Specifies the ending chapter index. Default is `-1`, meaning it will process up to the last chapter.
 - `--output_format`: (Optional) Determines the output format for the Text-to-Speech service. The default is `audio-24khz-48kbitrate-mono-mp3`. Supported formats include:
