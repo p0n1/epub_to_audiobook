@@ -1,0 +1,21 @@
+# Be sure to replace <your_subscription_key> and <your_region> with your actual
+# Azure Text-to-Speech API credentials. Also, replace your_book.epub with the
+# name of your EPUB file, and audiobook_output with the name of the directory
+# where you want to save the output files.
+
+# After creating and saving the `docker-compose.yml` file, run the
+# `docker-compose up` command in the same directory to pull the image and start
+# the conversion process.
+
+# You can then try to modify volumes to fit your need.
+
+version: '3'
+services:
+  epub_to_audiobook:
+    image: ghcr.io/p0n1/epub_to_audiobook:latest
+    environment:
+      MS_TTS_KEY: <your_subscription_key>
+      MS_TTS_REGION: <your_region>
+    volumes:
+      - ./:/app
+    command: 'your_book.epub audiobook_output'

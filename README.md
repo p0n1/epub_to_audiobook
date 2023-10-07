@@ -118,6 +118,8 @@ Replace `$MS_TTS_KEY` and `$MS_TTS_REGION` with your Azure Text-to-Speech API cr
 
 The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directory in the Docker container. This allows the tool to read the input file and write the output files to your local file system.
 
+**You can also check the [this example config file](./docker-compose.example.yml) for docker compose usage.**
+
 ## User-Friendly Guide for Windows Users
 
 For Windows users, especially if you're not very familiar with command-line tools, we've got you covered. We understand the challenges and have created a guide specifically tailored for you.
