@@ -14,9 +14,11 @@ from mutagen.id3 import TIT2, TPE1, TALB, TRCK
 import logging
 from time import sleep
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s [%(levelname)s] %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
 
 # Added max_retries constant
@@ -28,12 +30,11 @@ region = os.environ.get("MS_TTS_REGION")
 
 if not subscription_key or not region:
     raise ValueError(
-        "Please set AZURE_SUBSCRIPTION_KEY and AZURE_REGION environment variables")
+        "Please set AZURE_SUBSCRIPTION_KEY and AZURE_REGION environment variables"
+    )
 
 TOKEN_URL = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
-TOKEN_HEADERS = {
-    "Ocp-Apim-Subscription-Key": subscription_key
-}
+TOKEN_HEADERS = {"Ocp-Apim-Subscription-Key": subscription_key}
 
 TTS_URL = f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1"
 
@@ -49,33 +50,33 @@ def sanitize_title(title: str) -> str:
     return sanitized_title
 
 
-def extract_chapters(epub_book: epub.EpubBook, newline_mode: str, remove_endnotes: bool) -> List[Tuple[str, str]]:
+def extract_chapters(
+    epub_book: epub.EpubBook, newline_mode: str, remove_endnotes: bool
+) -> List[Tuple[str, str]]:
     chapters = []
     for item in epub_book.get_items():
         if item.get_type() == ebooklib.ITEM_DOCUMENT:
             content = item.get_content()
-            soup = BeautifulSoup(content, 'lxml')
-            title = soup.title.string if soup.title else ''
+            soup = BeautifulSoup(content, "lxml")
+            title = soup.title.string if soup.title else ""
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
             # Replace excessive whitespaces and newline characters based on the mode
-            if newline_mode == 'single':
-                cleaned_text = re.sub(
-                    r'[\n]+', MAGIC_BREAK_STRING, raw.strip())
-            elif newline_mode == 'double':
-                cleaned_text = re.sub(
-                    r'[\n]{2,}', MAGIC_BREAK_STRING, raw.strip())
+            if newline_mode == "single":
+                cleaned_text = re.sub(r"[\n]+", MAGIC_BREAK_STRING, raw.strip())
+            elif newline_mode == "double":
+                cleaned_text = re.sub(r"[\n]{2,}", MAGIC_BREAK_STRING, raw.strip())
             else:
                 raise ValueError(f"Invalid newline mode: {newline_mode}")
 
             logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
-            cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
+            cleaned_text = re.sub(r"\s+", " ", cleaned_text)
             logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
-            
-            #Removes endnote numbers
+
+            # Removes endnote numbers
             if remove_endnotes == True:
-                cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', '', cleaned_text)
+                cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
                 logger.info(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
             # fill in the title if it's missing
@@ -110,22 +111,25 @@ def get_access_token() -> AccessToken:
         except requests.exceptions.RequestException as e:
             if retry < MAX_RETRIES - 1:
                 logger.warning(
-                    f"Network error while getting access token (attempt {retry + 1}): {e}")
-                sleep(2 ** retry)
+                    f"Network error while getting access token (attempt {retry + 1}): {e}"
+                )
+                sleep(2**retry)
             else:
                 logger.error(
-                    f"Network error while getting access token (attempt {retry + 1}): {e}")
+                    f"Network error while getting access token (attempt {retry + 1}): {e}"
+                )
                 raise
 
 
 def is_special_char(char: str) -> bool:
     # Check if the character is a English letter, number or punctuation or a punctuation in Chinese, never split these characters.
     ord_char = ord(char)
-    result = (ord_char >= 33 and ord_char <= 126) or (
-        char in "。，、？！：；“”‘’（）《》【】…—～·「」『』〈〉〖〗〔〕") or (
-            char in "∶")  # special unicode punctuation
-    logger.debug(
-        f"is_special_char> char={char}, ord={ord_char}, result={result}")
+    result = (
+        (ord_char >= 33 and ord_char <= 126)
+        or (char in "。，、？！：；“”‘’（）《》【】…—～·「」『』〈〉〖〗〔〕")
+        or (char in "∶")
+    )  # special unicode punctuation
+    logger.debug(f"is_special_char> char={char}, ord={ord_char}, result={result}")
     return result
 
 
@@ -162,12 +166,26 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
         first_100 = chunk[:100]
         last_100 = chunk[-100:] if len(chunk) > 100 else ""
         logger.info(
-            f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}")
+            f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}"
+        )
 
     return chunks
 
 
-def text_to_speech(session: requests.Session, text: str, output_file: str, voice_name: str, language: str, break_duration: int, access_token: AccessToken, title: str, author: str, book_title: str, idx: int, output_format: str) -> AccessToken:
+def text_to_speech(
+    session: requests.Session,
+    text: str,
+    output_file: str,
+    voice_name: str,
+    language: str,
+    break_duration: int,
+    access_token: AccessToken,
+    title: str,
+    author: str,
+    book_title: str,
+    idx: int,
+    output_format: str,
+) -> AccessToken:
     # Adjust this value based on your testing
     max_chars = 1800 if language.startswith("zh") else 3000
 
@@ -177,14 +195,17 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
 
     for i, chunk in enumerate(text_chunks, 1):
         logger.debug(
-            f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]")
+            f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
+        )
         escaped_text = html.escape(chunk)
         logger.debug(f"Escaped text: [{escaped_text}]")
         # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
         escaped_text = escaped_text.replace(
-            MAGIC_BREAK_STRING.strip(), f" <break time='{break_duration}ms' /> ")  # strip in case leading bank is missing
+            MAGIC_BREAK_STRING.strip(), f" <break time='{break_duration}ms' /> "
+        )  # strip in case leading bank is missing
         logger.info(
-            f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}")
+            f"Processing chapter-{idx} <{title}>, chunk {i} of {len(text_chunks)}"
+        )
         ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{language}'><voice name='{voice_name}'>{escaped_text}</voice></speak>"
         logger.debug(f"SSML: [{ssml}]")
 
@@ -196,21 +217,24 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
                 "Authorization": f"Bearer {access_token.token}",
                 "Content-Type": "application/ssml+xml",
                 "X-Microsoft-OutputFormat": output_format,
-                "User-Agent": "Python"
+                "User-Agent": "Python",
             }
             try:
-                response = session.post(TTS_URL, headers=headers,
-                                        data=ssml.encode('utf-8'))
+                response = session.post(
+                    TTS_URL, headers=headers, data=ssml.encode("utf-8")
+                )
                 response.raise_for_status()
                 break
             except requests.exceptions.RequestException as e:
                 if retry < MAX_RETRIES - 1:
                     logger.warning(
-                        f"Error while converting text to speech (attempt {retry + 1}): {e}")
-                    sleep(2 ** retry)
+                        f"Error while converting text to speech (attempt {retry + 1}): {e}"
+                    )
+                    sleep(2**retry)
                 else:
                     logger.error(
-                        f"Error while converting text to speech (attempt {retry + 1}): {e}")
+                        f"Error while converting text to speech (attempt {retry + 1}): {e}"
+                    )
                     raise e
 
         audio_segments.append(io.BytesIO(response.content))
@@ -230,7 +254,20 @@ def text_to_speech(session: requests.Session, text: str, output_file: str, voice
     return access_token
 
 
-def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, language: str, preview: bool, newline_mode: str, break_duration: int, chapter_start: int, chapter_end: int, output_format: str, remove_endnotes: bool, output_text: bool) -> None:
+def epub_to_audiobook(
+    input_file: str,
+    output_folder: str,
+    voice_name: str,
+    language: str,
+    preview: bool,
+    newline_mode: str,
+    break_duration: int,
+    chapter_start: int,
+    chapter_end: int,
+    output_format: str,
+    remove_endnotes: bool,
+    output_text: bool,
+) -> None:
     book = epub.read_epub(input_file)
     chapters = extract_chapters(book, newline_mode, remove_endnotes)
 
@@ -241,10 +278,10 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
     # Get the book title and author from metadata or use fallback values
     book_title = "Untitled"
     author = "Unknown"
-    if book.get_metadata('DC', 'title'):
-        book_title = book.get_metadata('DC', 'title')[0][0]
-    if book.get_metadata('DC', 'creator'):
-        author = book.get_metadata('DC', 'creator')[0][0]
+    if book.get_metadata("DC", "title"):
+        book_title = book.get_metadata("DC", "title")[0][0]
+    if book.get_metadata("DC", "creator"):
+        author = book.get_metadata("DC", "creator")[0][0]
 
     # Filter out empty or very short chapters
     chapters = [(title, text) for title, text in chapters if text.strip()]
@@ -254,15 +291,18 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
     # Check chapter start and end args
     if chapter_start < 1 or chapter_start > len(chapters):
         raise ValueError(
-            f"Chapter start index {chapter_start} is out of range. Check your input.")
+            f"Chapter start index {chapter_start} is out of range. Check your input."
+        )
     if chapter_end < -1 or chapter_end > len(chapters):
         raise ValueError(
-            f"Chapter end index {chapter_end} is out of range. Check your input.")
+            f"Chapter end index {chapter_end} is out of range. Check your input."
+        )
     if chapter_end == -1:
         chapter_end = len(chapters)
     if chapter_start > chapter_end:
         raise ValueError(
-            f"Chapter start index {chapter_start} is larger than chapter end index {chapter_end}. Check your input.")
+            f"Chapter start index {chapter_start} is larger than chapter end index {chapter_end}. Check your input."
+        )
 
     logger.info(f"Converting chapters {chapter_start} to {chapter_end}.")
 
@@ -275,47 +315,110 @@ def epub_to_audiobook(input_file: str, output_folder: str, voice_name: str, lang
             logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
             if preview:
                 continue
-            
+
             if output_text:
                 text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
                 with open(text_file, "w") as file:
                     file.write(text)
-            
+
             output_file = os.path.join(output_folder, f"{idx:04d}_{title}.mp3")
-            access_token = text_to_speech(session, text, output_file, voice_name,
-                                          language, break_duration, access_token, title, author, book_title, idx, output_format)
+            access_token = text_to_speech(
+                session,
+                text,
+                output_file,
+                voice_name,
+                language,
+                break_duration,
+                access_token,
+                title,
+                author,
+                book_title,
+                idx,
+                output_format,
+            )
 
 
 def main():
     parser = argparse.ArgumentParser(description="Convert EPUB to audiobook")
     parser.add_argument("input_file", help="Path to the EPUB file")
     parser.add_argument("output_folder", help="Path to the output folder")
-    parser.add_argument("--voice_name", default="en-US-GuyNeural",
-                        help="Voice name for the text-to-speech service (default: en-US-GuyNeural). You can use zh-CN-YunyeNeural for Chinese ebooks.")
-    parser.add_argument("--language", default="en-US",
-                        help="Language for the text-to-speech service (default: en-US)")
-    parser.add_argument("--log", default="INFO",
-                        help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL")
-    parser.add_argument("--preview", action="store_true",
-                        help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.")
-    parser.add_argument('--newline_mode', choices=['single', 'double'], default='double',
-                        help="Choose the mode of detecting new paragraphs: 'single' or 'double'. 'single' means a single newline character, while 'double' means two consecutive newline characters. (default: double, works for most ebooks but will detect less paragraphs for some ebooks)")
-    parser.add_argument("--break_duration", default="1250",
-                        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.")
-    parser.add_argument("--chapter_start", default=1, type=int,
-                        help="Chapter start index (default: 1, starting from 1)")
-    parser.add_argument("--chapter_end", default=-1, type=int,
-                        help="Chapter end index (default: -1, meaning to the last chapter)")
-    parser.add_argument("--output_format", default="audio-24khz-48kbitrate-mono-mp3", help="Output format for the text-to-speech service (default: audio-24khz-48kbitrate-mono-mp3). Support formats: audio-16khz-32kbitrate-mono-mp3 audio-16khz-64kbitrate-mono-mp3 audio-16khz-128kbitrate-mono-mp3 audio-24khz-48kbitrate-mono-mp3 audio-24khz-96kbitrate-mono-mp3 audio-24khz-160kbitrate-mono-mp3 audio-48khz-96kbitrate-mono-mp3 audio-48khz-192kbitrate-mono-mp3. See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs. Only mp3 is supported for now. Different formats will result in different audio quality and file size.")
-    parser.add_argument("--output_text", action="store_true", help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output foler specified.")
-    parser.add_argument("--remove_endnotes", action="store_true", help="This will remove endnote numbers from the end or middle of sentences. This is useful for academic books.")
+    parser.add_argument(
+        "--voice_name",
+        default="en-US-GuyNeural",
+        help="Voice name for the text-to-speech service (default: en-US-GuyNeural). You can use zh-CN-YunyeNeural for Chinese ebooks.",
+    )
+    parser.add_argument(
+        "--language",
+        default="en-US",
+        help="Language for the text-to-speech service (default: en-US)",
+    )
+    parser.add_argument(
+        "--log",
+        default="INFO",
+        help="Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL",
+    )
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.",
+    )
+    parser.add_argument(
+        "--newline_mode",
+        choices=["single", "double"],
+        default="double",
+        help="Choose the mode of detecting new paragraphs: 'single' or 'double'. 'single' means a single newline character, while 'double' means two consecutive newline characters. (default: double, works for most ebooks but will detect less paragraphs for some ebooks)",
+    )
+    parser.add_argument(
+        "--break_duration",
+        default="1250",
+        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.",
+    )
+    parser.add_argument(
+        "--chapter_start",
+        default=1,
+        type=int,
+        help="Chapter start index (default: 1, starting from 1)",
+    )
+    parser.add_argument(
+        "--chapter_end",
+        default=-1,
+        type=int,
+        help="Chapter end index (default: -1, meaning to the last chapter)",
+    )
+    parser.add_argument(
+        "--output_format",
+        default="audio-24khz-48kbitrate-mono-mp3",
+        help="Output format for the text-to-speech service (default: audio-24khz-48kbitrate-mono-mp3). Support formats: audio-16khz-32kbitrate-mono-mp3 audio-16khz-64kbitrate-mono-mp3 audio-16khz-128kbitrate-mono-mp3 audio-24khz-48kbitrate-mono-mp3 audio-24khz-96kbitrate-mono-mp3 audio-24khz-160kbitrate-mono-mp3 audio-48khz-96kbitrate-mono-mp3 audio-48khz-192kbitrate-mono-mp3. See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs. Only mp3 is supported for now. Different formats will result in different audio quality and file size.",
+    )
+    parser.add_argument(
+        "--output_text",
+        action="store_true",
+        help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output foler specified.",
+    )
+    parser.add_argument(
+        "--remove_endnotes",
+        action="store_true",
+        help="This will remove endnote numbers from the end or middle of sentences. This is useful for academic books.",
+    )
 
     args = parser.parse_args()
 
     logger.setLevel(args.log)
 
-    epub_to_audiobook(args.input_file, args.output_folder,
-                      args.voice_name, args.language, args.preview, args.newline_mode, args.break_duration, args.chapter_start, args.chapter_end, args.output_format, args.remove_endnotes, args.output_text)
+    epub_to_audiobook(
+        args.input_file,
+        args.output_folder,
+        args.voice_name,
+        args.language,
+        args.preview,
+        args.newline_mode,
+        args.break_duration,
+        args.chapter_start,
+        args.chapter_end,
+        args.output_format,
+        args.remove_endnotes,
+        args.output_text,
+    )
     logger.info("Done! 👍")
     logger.info(f"args = {args}")
 
