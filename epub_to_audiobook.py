@@ -436,7 +436,9 @@ def epub_to_audiobook(tts_provider: TTSProvider):
             continue
         if idx > chapter_end:
             break
-        logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}")
+        logger.info(
+            f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}"
+        )
 
         total_characters += len(text)
 
@@ -458,6 +460,7 @@ def epub_to_audiobook(tts_provider: TTSProvider):
         )
 
     logger.info(f"✨ Total characters in selected chapters: {total_characters} ✨")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Convert EPUB to audiobook")
