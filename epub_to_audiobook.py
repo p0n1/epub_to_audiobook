@@ -427,13 +427,18 @@ def epub_to_audiobook(tts_provider: TTSProvider):
     else:
         raise ValueError(f"Invalid TTS provider: {tts_provider.general_config.tts}")
 
+    # Initialize total_characters to 0
+    total_characters = 0
+
     # Loop through each chapter and convert it to speech using the provided TTS provider
     for idx, (title, text) in enumerate(chapters, start=1):
         if idx < chapter_start:
             continue
         if idx > chapter_end:
             break
-        logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
+        logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}")
+
+        total_characters += len(text)
 
         if output_text:
             text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
@@ -452,6 +457,7 @@ def epub_to_audiobook(tts_provider: TTSProvider):
             audio_tags,
         )
 
+    logger.info(f"✨ Total characters in selected chapters: {total_characters} ✨")
 
 def main():
     parser = argparse.ArgumentParser(description="Convert EPUB to audiobook")
@@ -471,7 +477,7 @@ def main():
     parser.add_argument(
         "--preview",
         action="store_true",
-        help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index and titles.",
+        help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index, titles, and character counts.",
     )
     parser.add_argument(
         "--language",

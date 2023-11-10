@@ -101,7 +101,7 @@ options:
                         WARNING, ERROR, CRITICAL
   --preview             Enable preview mode. In preview mode, the script will
                         not convert the text to speech. Instead, it will print
-                        the chapter index and titles.
+                        the chapter index, titles, and character counts.
   --language LANGUAGE   Language for the text-to-speech service (default: en-
                         US). For Azure TTS (--tts=azure), check
                         https://learn.microsoft.com/en-us/azure/ai-
@@ -182,6 +182,16 @@ python3 epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe
 ```
 
 Executing the above command will generate a directory named `output_folder` and save the MP3 files for each chapter inside it. Once generated, you can import these audio files into [Audiobookshelf](https://github.com/advplyr/audiobookshelf) or play them with any audio player of your choice.
+
+## Preview Mode
+
+Before converting your epub file to an audiobook, you can use the `--preview` option to get a summary of each chapter. This will provide you with the character count of each chapter and the total count, instead of converting the text to speech.
+
+**Example**:
+
+```bash
+python3 epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder --preview
+```
 
 ## Using with Docker
 
