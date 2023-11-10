@@ -204,7 +204,7 @@ class OpenAITTSProvider(TTSProvider):
         self.model = model
         self.voice = voice
         self.format = format
-        self.client = OpenAI()  # OPENAI_API_KEY env handled by SDK
+        self.client = OpenAI()  # User should set OPENAI_API_KEY environment variable
 
     def __str__(self) -> str:
         return (
@@ -434,13 +434,14 @@ def epub_to_audiobook(tts_provider: TTSProvider):
         if idx > chapter_end:
             break
         logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}")
-        if preview:
-            continue
 
         if output_text:
             text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
             with open(text_file, "w") as file:
                 file.write(text)
+
+        if preview:
+            continue
 
         output_file = os.path.join(output_folder, f"{idx:04d}_{title}.{audio_suffix}")
 
@@ -498,7 +499,7 @@ def main():
     parser.add_argument(
         "--output_text",
         action="store_true",
-        help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output foler specified.",
+        help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output folder specified.",
     )
     parser.add_argument(
         "--remove_endnotes",

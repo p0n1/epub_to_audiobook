@@ -39,7 +39,7 @@ When you import the generated MP3 files into Audiobookshelf, the chapter titles 
 2. Create a virtual environment and activate it:
 
     ```bash
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate
     ```
 
@@ -61,37 +61,124 @@ When you import the generated MP3 files into Audiobookshelf, the chapter titles 
 To convert an EPUB ebook to an audiobook, run the following command:
 
 ```bash
-python epub_to_audiobook.py <input_file> <output_folder> [--voice_name <voice_name>] [--language <language>]
+python3 epub_to_audiobook.py <input_file> <output_folder> [options]
 ```
 
-- `<input_file>`: Path to the EPUB file.
-- `<output_folder>`: Path to the output folder where the audiobook files will be saved.
-- `--voice_name`: (Optional) Voice name for the Text-to-Speech service. Default is `en-US-GuyNeural`. For Chinese ebooks, use `zh-CN-YunyeNeural`.
-- `--language`: (Optional) Language for the Text-to-Speech service. Default is `en-US`.
-- `--log`: (Optional) Specifies the logging level. Default is `INFO`. Options include `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
-- `--preview`: (Optional) Enable preview mode. In this mode, the script won't convert the text to speech but will instead display the chapter index and titles.
-- `--output_text`: (Optional) Enable text output mode. In this mode, the script will export the full text of each chapter the folder specified in the output_folder argument.
-- `--newline_mode`: (Optional) Defines how new paragraphs are detected: `single` or `double`. Default is `double`, suitable for most ebooks. The 'single' mode detects paragraphs by one newline character and 'double' by two consecutive newlines.
-- `--break_duration`: (Optional) Determines the break duration in milliseconds between different paragraphs or sections. Default is `1250`. Valid values range from 0 to 5000 milliseconds.
-- `--remove_endnotes`: (Optional) This will remove all numerical endnotes from the middle or end of sentences.
-- `--chapter_start`: (Optional) Designates the starting chapter index. Default is `1`.
-- `--chapter_end`: (Optional) Specifies the ending chapter index. Default is `-1`, meaning it will process up to the last chapter.
-- `--output_format`: (Optional) Determines the output format for the Text-to-Speech service. The default is `audio-24khz-48kbitrate-mono-mp3`. Supported formats include:
-  - `audio-16khz-32kbitrate-mono-mp3`
-  - `audio-16khz-64kbitrate-mono-mp3`
-  - `audio-16khz-128kbitrate-mono-mp3`
-  - `audio-24khz-48kbitrate-mono-mp3`
-  - `audio-24khz-96kbitrate-mono-mp3`
-  - `audio-24khz-160kbitrate-mono-mp3`
-  - `audio-48khz-96kbitrate-mono-mp3`
-  - `audio-48khz-192kbitrate-mono-mp3`
-  
-  For a detailed understanding of these formats, refer to [Microsoft's official documentation](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs). Note: Only mp3 is supported at the moment. Different formats lead to variations in audio quality and file size.
+To check the latest option descriptions for this script, you can run the following command in the terminal:
+
+```bash
+python3 epub_to_audiobook.py -h
+```
+
+```bash
+usage: epub_to_audiobook.py [-h] [--tts {azure,openai}] [--log LOG]
+                            [--preview] [--language LANGUAGE]
+                            [--newline_mode {single,double}]
+                            [--chapter_start CHAPTER_START]
+                            [--chapter_end CHAPTER_END] [--output_text]
+                            [--remove_endnotes] [--voice_name VOICE_NAME]
+                            [--break_duration BREAK_DURATION]
+                            [--output_format OUTPUT_FORMAT]
+                            [--openai_model OPENAI_MODEL]
+                            [--openai_voice OPENAI_VOICE]
+                            [--openai_format OPENAI_FORMAT]
+                            input_file output_folder
+
+Convert EPUB to audiobook
+
+positional arguments:
+  input_file            Path to the EPUB file
+  output_folder         Path to the output folder
+
+options:
+  -h, --help            show this help message and exit
+  --tts {azure,openai}  Choose TTS provider (default: azure). azure: Azure
+                        Cognitive Services, openai: OpenAI TTS API. When using
+                        azure, environment variables MS_TTS_KEY and
+                        MS_TTS_REGION must be set. When using openai,
+                        environment variable OPENAI_API_KEY must be set.
+  --log LOG             Log level (default: INFO), can be DEBUG, INFO,
+                        WARNING, ERROR, CRITICAL
+  --preview             Enable preview mode. In preview mode, the script will
+                        not convert the text to speech. Instead, it will print
+                        the chapter index and titles.
+  --language LANGUAGE   Language for the text-to-speech service (default: en-
+                        US). For Azure TTS (--tts=azure), check
+                        https://learn.microsoft.com/en-us/azure/ai-
+                        services/speech-service/language-
+                        support?tabs=tts#text-to-speech for supported
+                        languages. For OpenAI TTS (--tts=openai), their API
+                        detects the language automatically. But setting this
+                        will also help on splitting the text into chunks with
+                        different strategies in this tool, especially for
+                        Chinese characters. For Chinese books, use zh-CN, zh-
+                        TW, or zh-HK.
+  --newline_mode {single,double}
+                        Choose the mode of detecting new paragraphs: 'single'
+                        or 'double'. 'single' means a single newline
+                        character, while 'double' means two consecutive
+                        newline characters. (default: double, works for most
+                        ebooks but will detect less paragraphs for some
+                        ebooks)
+  --chapter_start CHAPTER_START
+                        Chapter start index (default: 1, starting from 1)
+  --chapter_end CHAPTER_END
+                        Chapter end index (default: -1, meaning to the last
+                        chapter)
+  --output_text         Enable Output Text. This will export a plain text file
+                        for each chapter specified and write the files to the
+                        output folder specified.
+  --remove_endnotes     This will remove endnote numbers from the end or
+                        middle of sentences. This is useful for academic
+                        books.
+
+Azure TTS Options:
+  --voice_name VOICE_NAME
+                        Voice name for the text-to-speech service (default:
+                        en-US-GuyNeural). You can use zh-CN-YunyeNeural for
+                        Chinese ebooks.
+  --break_duration BREAK_DURATION
+                        Break duration in milliseconds for the different
+                        paragraphs or sections (default: 1250). Valid values
+                        range from 0 to 5000 milliseconds.
+  --output_format OUTPUT_FORMAT
+                        Output format for the text-to-speech service (default:
+                        audio-24khz-48kbitrate-mono-mp3). Support formats:
+                        audio-16khz-32kbitrate-mono-mp3
+                        audio-16khz-64kbitrate-mono-mp3
+                        audio-16khz-128kbitrate-mono-mp3
+                        audio-24khz-48kbitrate-mono-mp3
+                        audio-24khz-96kbitrate-mono-mp3
+                        audio-24khz-160kbitrate-mono-mp3
+                        audio-48khz-96kbitrate-mono-mp3
+                        audio-48khz-192kbitrate-mono-mp3. See
+                        https://learn.microsoft.com/en-us/azure/ai-
+                        services/speech-service/rest-text-to-
+                        speech?tabs=streaming#audio-outputs. Only mp3 is
+                        supported for now. Different formats will result in
+                        different audio quality and file size.
+
+OpenAI TTS Options:
+  --openai_model OPENAI_MODEL
+                        Available OpenAI model options: tts-1 and tts-1-hd.
+                        Check https://platform.openai.com/docs/guides/text-to-
+                        speech/audio-quality.
+  --openai_voice OPENAI_VOICE
+                        Available OpenAI voice options: alloy, echo, fable,
+                        onyx, nova, and shimmer. Check
+                        https://platform.openai.com/docs/guides/text-to-
+                        speech/voice-options.
+  --openai_format OPENAI_FORMAT
+                        Available OpenAI output options: mp3, opus, aac, and
+                        flac. Check
+                        https://platform.openai.com/docs/guides/text-to-
+                        speech/supported-output-formats.
+```  
 
 **Example**:
 
 ```bash
-python epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder
+python3 epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder
 ```
 
 Executing the above command will generate a directory named `output_folder` and save the MP3 files for each chapter inside it. Once generated, you can import these audio files into [Audiobookshelf](https://github.com/advplyr/audiobookshelf) or play them with any audio player of your choice.
@@ -114,7 +201,13 @@ Then, you can run the tool with the following command:
 docker run --rm -v ./:/app -e MS_TTS_KEY=$MS_TTS_KEY -e MS_TTS_REGION=$MS_TTS_REGION ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output
 ```
 
-Replace `$MS_TTS_KEY` and `$MS_TTS_REGION` with your Azure Text-to-Speech API credentials. Replace `your_book.epub` with the name of the input EPUB file, and `audiobook_output` with the name of the directory where you want to save the output files.
+For OpenAI, you can run:
+
+```bash
+docker run --rm -v ./:/app -e OPENAI_API_KEY=$OPENAI_API_KEY ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts openai
+```
+
+Replace `$MS_TTS_KEY` and `$MS_TTS_REGION` with your Azure Text-to-Speech API credentials. Replace `$OPENAI_API_KEY` with your OpenAI API key. Replace `your_book.epub` with the name of the input EPUB file, and `audiobook_output` with the name of the directory where you want to save the output files.
 
 The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directory in the Docker container. This allows the tool to read the input file and write the output files to your local file system.
 
@@ -145,8 +238,58 @@ You can also listen to samples of the available voices in the [Azure TTS Voice G
 For example, if you want to use a British English female voice for the conversion, you can use the following command:
 
 ```bash
-python epub_to_audiobook.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
+python3 epub_to_audiobook.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
 ```
+
+## More examples
+
+Here are some examples that demonstrate various option combinations:
+
+### Examples Using Azure TTS
+
+1. **Basic conversion using Azure with default settings**  
+   This command will convert an EPUB file to an audiobook using Azure's default TTS settings.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure
+   ```
+
+2. **Azure conversion with custom language, voice and logging level**  
+   Converts an EPUB file to an audiobook with a specified voice and a custom log level for debugging purposes.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure --language zh-CN --voice_name "zh-CN-YunyeNeural" --log DEBUG
+   ```
+
+3. **Azure conversion with chapter range and break duration**  
+   Converts a specified range of chapters from an EPUB file to an audiobook with custom break duration between paragraphs.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure --chapter_start 5 --chapter_end 10 --break_duration "1500"
+   ```
+
+### Examples Using OpenAI TTS
+
+1. **Basic conversion using OpenAI with default settings**  
+   This command will convert an EPUB file to an audiobook using OpenAI's default TTS settings.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai
+   ```
+
+2. **OpenAI conversion with HD model and specific voice**  
+   Converts an EPUB file to an audiobook using the high-definition OpenAI model and a specific voice choice.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --openai_model "tts-1-hd" --openai_voice "fable"
+   ```
+
+3. **OpenAI conversion with preview and text output**  
+   Enables preview mode and text output, which will display the chapter index and titles instead of converting them and will also export the text.
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
+   ```
 
 ## License
 
