@@ -123,7 +123,9 @@ class AzureTTSProvider(TTSProvider):
     def get_access_token(self) -> str:
         for retry in range(MAX_RETRIES):
             try:
+                logger.info("Getting new access token")
                 response = requests.post(self.TOKEN_URL, headers=self.TOKEN_HEADERS)
+                response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
                 access_token = str(response.text)
                 logger.info("Got new access token")
                 return access_token
@@ -176,9 +178,12 @@ class AzureTTSProvider(TTSProvider):
                     "User-Agent": "Python",
                 }
                 try:
+                    logger.info("Sending request to Azure TTS, data length: " + str(len(ssml)))
                     response = requests.post(
                         self.TTS_URL, headers=headers, data=ssml.encode("utf-8")
                     )
+                    response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
+                    logger.info("Got response from Azure TTS, response length: " + str(len(response.content)))
                     audio_segments.append(io.BytesIO(response.content))
                     break
                 except requests.exceptions.RequestException as e:
