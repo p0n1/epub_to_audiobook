@@ -20,5 +20,9 @@ venv/
 .DS_Store
 Thumbs.db
 
+.vscode
+
 # audio files
 audiobook_output/
+
+private_examples/

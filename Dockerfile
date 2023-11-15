@@ -1,14 +1,17 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim-bookworm
 
-# Set the working directory in the container
-WORKDIR /app
+# Set the source directory in the container
+WORKDIR /app_src
 
 # Add current directory code to docker
-ADD . /app
+ADD . /app_src
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Set the working directory to /app
+WORKDIR /app
+
 # Set this as the default command
-ENTRYPOINT [ "python", "epub_to_audiobook.py" ]
+ENTRYPOINT [ "python", "/app_src/epub_to_audiobook.py" ]
