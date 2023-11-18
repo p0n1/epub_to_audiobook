@@ -313,6 +313,12 @@ Here are some examples that demonstrate various option combinations:
    python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
    ```
 
+## Troubleshooting
+
+### ModuleNotFoundError: No module named 'importlib_metadata'
+
+This may be because the Python version you are using is [less than 3.8](https://stackoverflow.com/questions/73165636/no-module-named-importlib-metadata). You can try to manually install it by `pip3 install importlib-metadata`, or use a higher Python version.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

@@ -20,9 +20,13 @@ venv/
 .DS_Store
 Thumbs.db
 
+.vscode
+
 # audio files
 audiobook_output/
 
 # piper models
 *.onnx
 *.onnx.json
+
+private_examples/
