@@ -178,12 +178,17 @@ class AzureTTSProvider(TTSProvider):
                     "User-Agent": "Python",
                 }
                 try:
-                    logger.info("Sending request to Azure TTS, data length: " + str(len(ssml)))
+                    logger.info(
+                        "Sending request to Azure TTS, data length: " + str(len(ssml))
+                    )
                     response = requests.post(
                         self.TTS_URL, headers=headers, data=ssml.encode("utf-8")
                     )
                     response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
-                    logger.info("Got response from Azure TTS, response length: " + str(len(response.content)))
+                    logger.info(
+                        "Got response from Azure TTS, response length: "
+                        + str(len(response.content))
+                    )
                     audio_segments.append(io.BytesIO(response.content))
                     break
                 except requests.exceptions.RequestException as e:
@@ -248,12 +253,12 @@ class OpenAITTSProvider(TTSProvider):
             )
             audio_segments.append(io.BytesIO(response.content))
 
-            with open(output_file, "wb") as outfile:
-                for segment in audio_segments:
-                    segment.seek(0)
-                    outfile.write(segment.read())
+        with open(output_file, "wb") as outfile:
+            for segment in audio_segments:
+                segment.seek(0)
+                outfile.write(segment.read())
 
-            set_audio_tags(output_file, audio_tags)
+        set_audio_tags(output_file, audio_tags)
 
 
 def sanitize_title(title: str) -> str:
