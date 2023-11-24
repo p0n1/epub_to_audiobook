@@ -228,9 +228,26 @@ The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directo
 
 **You can also check the [this example config file](./docker-compose.example.yml) for docker compose usage.**
 
+## Web UI
+![webui](./examples/webui.png)
+
 ## Using with Docker Compose with Web UI
 ```bash
 docker compose -f docker-compose-ui.yml up
+```
+
+## Using with Portainer Stack
+```yaml
+version: '3'
+services:
+  my_service:
+    image: ghcr.io/dynm/epub_to_audiobook:latest
+    entrypoint: python /app_src/ui.py
+    command: --listen 0.0.0.0 --port 7860 --output_folder /audiobook_output
+    ports:
+      - 7860:7860
+    volumes:
+      - /media/audiobooks:/audiobook_output
 ```
 
 ## User-Friendly Guide for Windows Users
