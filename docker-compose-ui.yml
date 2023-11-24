@@ -1,0 +1,10 @@
+version: '3'
+services:
+  my_service:
+    build: .
+    entrypoint: python /app_src/ui.py
+    command: --listen 0.0.0.0 --port 7860 --output_folder /audiobook_output
+    ports:
+      - 7860:7860
+    volumes:
+      - ./audiobook_output:/audiobook_output
