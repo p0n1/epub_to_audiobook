@@ -241,7 +241,7 @@ docker compose -f docker-compose-ui.yml up
 version: '3'
 services:
   my_service:
-    image: ghcr.io/dynm/epub_to_audiobook:latest
+    image: ghcr.io/p0n1/epub_to_audiobook:latest
     entrypoint: python /app_src/ui.py
     command: --listen 0.0.0.0 --port 7860 --output_folder /audiobook_output
     ports:
