@@ -228,6 +228,11 @@ The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directo
 
 **You can also check the [this example config file](./docker-compose.example.yml) for docker compose usage.**
 
+## Using with Docker Compose with Web UI
+```bash
+docker compose -f docker-compose-ui.yml up
+```
+
 ## User-Friendly Guide for Windows Users
 
 For Windows users, especially if you're not very familiar with command-line tools, we've got you covered. We understand the challenges and have created a guide specifically tailored for you.
