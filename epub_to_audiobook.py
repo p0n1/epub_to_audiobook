@@ -2,6 +2,7 @@ import os
 import re
 import io
 import argparse
+import subprocess
 import html
 import ebooklib
 from ebooklib import epub
@@ -30,7 +31,7 @@ MAGIC_BREAK_STRING = " @BRK#"  # leading blank is for text split
 
 TTS_AZURE = "azure"
 TTS_OPENAI = "openai"
-
+TTS_LOCAL = "local"
 
 @dataclasses.dataclass
 class AudioTags:
@@ -260,6 +261,51 @@ class OpenAITTSProvider(TTSProvider):
 
         set_audio_tags(output_file, audio_tags)
 
+class LocalTTSProvider(TTSProvider):
+    def __init__(self, general_config: GeneralConfig, cmd, format, max_chars, break_ssml):
+        super().__init__(general_config)
+        self.cmd = cmd
+        self.format = format
+        self.max_chars = max_chars
+        self.break_ssml = break_ssml
+
+    def __str__(self) -> str:
+        return (super().__str__() + f", cmd={self.cmd}")
+
+    def text_to_speech(self, text: str, output_file: str, audio_tags: AudioTags):
+        text_chunks = split_text(text, self.max_chars, self.general_config.language)
+
+        with open(output_file, "wb") as outfile:
+            for i, chunk in enumerate(text_chunks, 1):
+                logger.debug(
+                    f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
+                )
+                # replace MAGIC_BREAK_STRING with break SSML
+                chunk = chunk.replace(
+                    MAGIC_BREAK_STRING.strip(),
+                    self.break_ssml,
+                )  # strip in case leading bank is missing
+                logger.info(
+                    f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {len(text_chunks)}"
+                )
+
+                logger.debug(f"Text: [{chunk}], length={len(chunk)}")
+
+                chuck_file = f"{output_file}.{i}"
+                process = subprocess.Popen(f"{self.cmd} {chuck_file}", stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+                stdout, stderr = process.communicate(input=chunk.encode())
+                if stdout:
+                    logger.info(stdout.decode())
+                if stderr:
+                    logger.error(stderr.decode())
+
+                segment = io.FileIO(chuck_file)
+                segment.seek(0)
+                outfile.write(segment.read())
+                os.remove(chuck_file)
+
+        set_audio_tags(output_file, audio_tags)
+
 
 def sanitize_title(title: str) -> str:
     # replace MAGIC_BREAK_STRING with a blank space
@@ -434,6 +480,8 @@ def epub_to_audiobook(tts_provider: TTSProvider):
         audio_suffix = f"{tts_provider.format}"  # mp3, opus, aac, or flac
     elif isinstance(tts_provider, AzureTTSProvider):
         audio_suffix = "mp3"  # only mp3 is supported for Azure TTS for now
+    elif isinstance(tts_provider, LocalTTSProvider):
+        audio_suffix = tts_provider.format
     else:
         raise ValueError(f"Invalid TTS provider: {tts_provider.general_config.tts}")
 
@@ -478,7 +526,7 @@ def main():
     parser.add_argument("output_folder", help="Path to the output folder")
     parser.add_argument(
         "--tts",
-        choices=[TTS_AZURE, TTS_OPENAI],
+        choices=[TTS_AZURE, TTS_OPENAI, TTS_LOCAL],
         default=TTS_AZURE,
         help="Choose TTS provider (default: azure). azure: Azure Cognitive Services, openai: OpenAI TTS API. When using azure, environment variables MS_TTS_KEY and MS_TTS_REGION must be set. When using openai, environment variable OPENAI_API_KEY must be set.",
     )
@@ -561,6 +609,29 @@ def main():
         default="mp3",
         help="Available OpenAI output options: mp3, opus, aac, and flac. Check https://platform.openai.com/docs/guides/text-to-speech/supported-output-formats.",
     )
+    # Local TTS specific arguments
+    local_group = parser.add_argument_group("Local TTS Options")
+    local_group.add_argument(
+        "--local_tts_cmd",
+        default="piper --model en_US-lessac-medium --output_file",
+        help="command to use for local TTS, it should accept text via stdin and write the resulting audio to the filename passed as argument.",
+    )
+    local_group.add_argument(
+        "--local_tts_format",
+        default="wav",
+        help="The output format the local TTS service outputs (default: wav).",
+    )
+    local_group.add_argument(
+        "--local_tts_max_chars",
+        type=int,
+        default=10000,
+        help="The max chars the local TTS service could handle at once (default: 10000).",
+    )
+    local_group.add_argument(
+        "--local_tts_break_ssml",
+        default="   ",
+        help="The break SSML supported by the local TTS service (default: \"   \").",
+    )
 
     args = parser.parse_args()
 
@@ -578,6 +649,14 @@ def main():
     elif args.tts == TTS_OPENAI:
         tts_provider = OpenAITTSProvider(
             general_config, args.openai_model, args.openai_voice, args.openai_format
+        )
+    elif args.tts == TTS_LOCAL:
+        tts_provider = LocalTTSProvider(
+            general_config,
+            args.local_tts_cmd,
+            args.local_tts_format,
+            args.local_tts_max_chars,
+            args.local_tts_break_ssml,
         )
     else:
         raise ValueError(f"Invalid TTS provider: {args.tts}")

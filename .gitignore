@@ -25,4 +25,8 @@ Thumbs.db
 # audio files
 audiobook_output/
 
+# piper models
+*.onnx
+*.onnx.json
+
 private_examples/
