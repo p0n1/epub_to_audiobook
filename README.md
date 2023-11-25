@@ -313,6 +313,28 @@ Here are some examples that demonstrate various option combinations:
    python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
    ```
 
+### Examples Using Local TTS
+
+1. **Local TTS with default settings**  
+   This command will convert an EPUB file to an audiobook using local [piper tts](https://github.com/rhasspy/piper).
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts local
+   ```
+2. **Local TTS with custom command**  
+
+   ```sh
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts local --local_tts_cmd ./tts.sh 
+   ```
+
+   Example `tts.sh` powered by [coqui-ai/TTS](https://github.com/coqui-ai/TTS).
+
+   ```bash
+   #!/bin/bash
+
+   tts --text="$(cat)" --out_path "$@"
+   ```
+
 ## Troubleshooting
 
 ### ModuleNotFoundError: No module named 'importlib_metadata'
