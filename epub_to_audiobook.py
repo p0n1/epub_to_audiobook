@@ -16,11 +16,18 @@ import logging
 from time import sleep
 import dataclasses
 from openai import OpenAI
+from tqdm import tqdm
+import time
+import configparser
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.FileHandler("log.txt"),  # Hier wird die Log-Datei festgelegt
+        logging.StreamHandler(),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -31,6 +38,29 @@ MAGIC_BREAK_STRING = " @BRK#"  # leading blank is for text split
 TTS_AZURE = "azure"
 TTS_OPENAI = "openai"
 
+def read_config_file(config_file_path):
+    config = configparser.ConfigParser()
+    config.read(config_file_path)
+    return config
+
+def save_config_file(config_file_path, config):
+    with open(config_file_path, "w") as configfile:
+        config.write(configfile)
+
+def load_config(args):
+    # Prioritize command line arguments over config file
+    config = configparser.ConfigParser()
+
+    # Try to read from the specified config file
+    if args.config_file:
+        config = read_config_file(args.config_file)
+
+    # Override or add config values from command line arguments
+    for key, value in vars(args).items():
+        if value is not None:
+            config.set("DEFAULT", key, str(value))
+
+    return config
 
 @dataclasses.dataclass
 class AudioTags:
@@ -426,51 +456,50 @@ def epub_to_audiobook(tts_provider: TTSProvider):
             f"Chapter start index {chapter_start} is larger than chapter end index {chapter_end}. Check your input."
         )
 
-    logger.info(f"Converting chapters {chapter_start} to {chapter_end}.")
+    total_characters = 0  # Variable initialisieren
 
-    # Set the audio suffix based on the TTS provider
-    audio_suffix = "mp3"
-    if isinstance(tts_provider, OpenAITTSProvider):
-        audio_suffix = f"{tts_provider.format}"  # mp3, opus, aac, or flac
-    elif isinstance(tts_provider, AzureTTSProvider):
-        audio_suffix = "mp3"  # only mp3 is supported for Azure TTS for now
-    else:
-        raise ValueError(f"Invalid TTS provider: {tts_provider.general_config.tts}")
+    start_time = time.time()  # Startzeit messen
 
-    # Initialize total_characters to 0
-    total_characters = 0
-
-    # Loop through each chapter and convert it to speech using the provided TTS provider
+    # Loop durch jeden Chapter und Konvertierung zu Sprache unter Verwendung des bereitgestellten TTS-Providers
     for idx, (title, text) in enumerate(chapters, start=1):
         if idx < chapter_start:
             continue
         if idx > chapter_end:
             break
-        logger.info(
-            f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}"
-        )
 
-        total_characters += len(text)
+        # Display progress bar
+        with tqdm(total=len(chapters), desc=f"Converting chapter {idx}/{len(chapters)}") as pbar:
+            logger.info(f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}")
 
-        if output_text:
-            text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
-            with open(text_file, "w") as file:
-                file.write(text)
+            total_characters += len(text)
 
-        if preview:
-            continue
+            if output_text:
+                text_file = os.path.join(output_folder, f"{idx:04d}_{title}.txt")
+                with open(text_file, "w") as file:
+                    file.write(text)
 
-        output_file = os.path.join(output_folder, f"{idx:04d}_{title}.{audio_suffix}")
+            if preview:
+                pbar.update(1)
+                continue
 
-        audio_tags = AudioTags(title, author, book_title, idx)
-        tts_provider.text_to_speech(
-            text,
-            output_file,
-            audio_tags,
-        )
+            # Define audio_suffix here or pass it as an argument when calling the function
+            audio_suffix = ".mp3"  # Change this to the appropriate audio file extension
+
+            output_file = os.path.join(output_folder, f"{idx:04d}_{title}{audio_suffix}")
+
+            audio_tags = AudioTags(title, author, book_title, idx)
+            tts_provider.text_to_speech(
+                text,
+                output_file,
+                audio_tags,
+            )
+
+            pbar.update(1)
+
+    elapsed_time = time.time() - start_time  # Gesamtzeit berechnen
 
     logger.info(f"✨ Total characters in selected chapters: {total_characters} ✨")
-
+    logger.info(f"⌛ Elapsed Time: {elapsed_time:.2f} seconds ⌛")
 
 def main():
     parser = argparse.ArgumentParser(description="Convert EPUB to audiobook")
