@@ -66,7 +66,7 @@ class OpenAITTSProvider(BaseTTSProvider):
             )
             audio_segments.append(io.BytesIO(response.content))
 
-        with open(output_file, "wb") as outfile:
+        with open(output_file, "wb", encoding='utf-8') as outfile:
             for segment in audio_segments:
                 segment.seek(0)
                 outfile.write(segment.read())

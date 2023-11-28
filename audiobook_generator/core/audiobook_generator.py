@@ -9,6 +9,22 @@ from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
 logger = logging.getLogger(__name__)
 
 
+def confirm_conversion(price):
+    print(f"Estimate book voiceover would cost you roughly: ${price:.2f}")
+    print("Do you want to continue? (y/n)")
+    answer = input()
+    if answer.lower() != "y":
+        print("Aborted.")
+        exit(0)
+
+
+def get_total_chars(chapters):
+    total_characters = 0
+    for title, text in chapters:
+        total_characters += len(text)
+    return total_characters
+
+
 class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
@@ -46,8 +62,10 @@ class AudiobookGenerator:
         logger.info(f"Converting chapters from {self.config.chapter_start} to {self.config.chapter_end}.")
 
         # Initialize total_characters to 0
-        total_characters = self.get_total_chars(chapters)
+        total_characters = get_total_chars(chapters)
+        logger.info(f"✨ Total characters in selected book: {total_characters} ✨")
         rough_price = tts_provider.estimate_cost(total_characters)
+        confirm_conversion(rough_price)
 
         # Loop through each chapter and convert it to speech using the provided TTS provider
         for idx, (title, text) in enumerate(chapters, start=1):
@@ -59,11 +77,9 @@ class AudiobookGenerator:
                 f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}"
             )
 
-            total_characters += len(text)
-
             if self.config.output_text:
                 text_file = os.path.join(self.config.output_folder, f"{idx:04d}_{title}.txt")
-                with open(text_file, "w") as file:
+                with open(text_file, "w", encoding='utf-8') as file:
                     file.write(text)
 
             if self.config.preview:
@@ -78,19 +94,3 @@ class AudiobookGenerator:
                 output_file,
                 audio_tags,
             )
-
-        logger.info(f"✨ Total characters in selected chapters: {total_characters} ✨")
-
-    def get_total_chars(self, chapters):
-        total_characters = 0
-        for title, text in chapters:
-            total_characters += len(text)
-        return total_characters
-
-    def confirm_conversion(self, price):
-        print(f"Estimate book voiceover would cost you roughly: ${price:.2f}")
-        print("Do you want to continue? (y/n)")
-        answer = input()
-        if answer.lower() != "y":
-            print("Aborted.")
-            exit(0)

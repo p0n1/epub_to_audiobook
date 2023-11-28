@@ -71,7 +71,7 @@ def handle_args():
 
     parser.add_argument(
         "--voice_name",
-        help="Voice name for the text-to-speech service (default: en-US-GuyNeural). You can use zh-CN-YunyeNeural for Chinese ebooks.",
+        help="Various TTS providers has different voice names, look up for your provider settings.",
     )
     parser.add_argument(
         "--break_duration",
@@ -80,12 +80,12 @@ def handle_args():
     )
     parser.add_argument(
         "--output_format",
-        help="Output format for the text-to-speech service (default: audio-24khz-48kbitrate-mono-mp3). Support formats: audio-16khz-32kbitrate-mono-mp3 audio-16khz-64kbitrate-mono-mp3 audio-16khz-128kbitrate-mono-mp3 audio-24khz-48kbitrate-mono-mp3 audio-24khz-96kbitrate-mono-mp3 audio-24khz-160kbitrate-mono-mp3 audio-48khz-96kbitrate-mono-mp3 audio-48khz-192kbitrate-mono-mp3. See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/rest-text-to-speech?tabs=streaming#audio-outputs. Only mp3 is supported for now. Different formats will result in different audio quality and file size.",
+        help="Output format for the text-to-speech service. Supported format depends on selected TTS provider",
     )
 
     parser.add_argument(
         "--model_name",
-        help="Available OpenAI model options: tts-1 and tts-1-hd. Check https://platform.openai.com/docs/guides/text-to-speech/audio-quality.",
+        help="Various TTS providers has different neural model names",
     )
 
     args = parser.parse_args()

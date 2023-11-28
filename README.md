@@ -76,17 +76,21 @@ python3 epub_to_audiobook.py -h
 ```
 
 ```bash
-usage: epub_to_audiobook.py [-h] [--tts {azure,openai}] [--log LOG]
-                            [--preview] [--language LANGUAGE]
+usage: epub_to_audiobook.py [-h] 
+                            [--tts {azure,openai}] 
+                            [--log LOG]
+                            [--preview] 
+                            [--language LANGUAGE]
                             [--newline_mode {single,double}]
                             [--chapter_start CHAPTER_START]
-                            [--chapter_end CHAPTER_END] [--output_text]
-                            [--remove_endnotes] [--voice_name VOICE_NAME]
+                            [--chapter_end CHAPTER_END] 
+                            [--output_text]
+                            [--remove_endnotes] 
                             [--break_duration BREAK_DURATION]
                             [--output_format OUTPUT_FORMAT]
-                            [--openai_model OPENAI_MODEL]
-                            [--openai_voice OPENAI_VOICE]
-                            [--openai_format OPENAI_FORMAT]
+                            [--voice_name VOICE_NAME]
+                            [--model_name MODEL_NAME]
+                            [--voice_name VOICE_NAME]
                             input_file output_folder
 
 Convert EPUB to audiobook
@@ -137,47 +141,20 @@ options:
                         middle of sentences. This is useful for academic
                         books.
 
-Azure TTS Options:
   --voice_name VOICE_NAME
-                        Voice name for the text-to-speech service (default:
-                        en-US-GuyNeural). You can use zh-CN-YunyeNeural for
+                        Voice name for the text-to-speech service. You can use zh-CN-YunyeNeural for
                         Chinese ebooks.
   --break_duration BREAK_DURATION
                         Break duration in milliseconds for the different
                         paragraphs or sections (default: 1250). Valid values
                         range from 0 to 5000 milliseconds.
   --output_format OUTPUT_FORMAT
-                        Output format for the text-to-speech service (default:
-                        audio-24khz-48kbitrate-mono-mp3). Support formats:
-                        audio-16khz-32kbitrate-mono-mp3
-                        audio-16khz-64kbitrate-mono-mp3
-                        audio-16khz-128kbitrate-mono-mp3
-                        audio-24khz-48kbitrate-mono-mp3
-                        audio-24khz-96kbitrate-mono-mp3
-                        audio-24khz-160kbitrate-mono-mp3
-                        audio-48khz-96kbitrate-mono-mp3
-                        audio-48khz-192kbitrate-mono-mp3. See
-                        https://learn.microsoft.com/en-us/azure/ai-
-                        services/speech-service/rest-text-to-
-                        speech?tabs=streaming#audio-outputs. Only mp3 is
-                        supported for now. Different formats will result in
-                        different audio quality and file size.
+                        Output format for the text-to-speech service. Supported formats depends on selected TTS provider.
 
-OpenAI TTS Options:
-  --openai_model OPENAI_MODEL
-                        Available OpenAI model options: tts-1 and tts-1-hd.
-                        Check https://platform.openai.com/docs/guides/text-to-
-                        speech/audio-quality.
-  --openai_voice OPENAI_VOICE
-                        Available OpenAI voice options: alloy, echo, fable,
-                        onyx, nova, and shimmer. Check
-                        https://platform.openai.com/docs/guides/text-to-
-                        speech/voice-options.
-  --openai_format OPENAI_FORMAT
-                        Available OpenAI output options: mp3, opus, aac, and
-                        flac. Check
-                        https://platform.openai.com/docs/guides/text-to-
-                        speech/supported-output-formats.
+  --model_name MODEL_NAME
+                        Various TTS providers has different neural model names.
+  --voice_name VOICE_NAME
+                        Various TTS providers has different voice names, look up for your provider settings.
 ```  
 
 **Example**:
@@ -260,7 +237,7 @@ For example, if you want to use a British English female voice for the conversio
 python3 epub_to_audiobook.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
 ```
 
-For OpenAI TTS, you can specify the model, voice, and format options using `--openai_model`, `--openai_voice`, and `--openai_format`, respectively.
+For OpenAI TTS, you can specify the model, voice, and format options using `--model_name`, `--voice_name`, and `--output_format`, respectively.
 
 ## More examples
 
@@ -302,7 +279,7 @@ Here are some examples that demonstrate various option combinations:
    Converts an EPUB file to an audiobook using the high-definition OpenAI model and a specific voice choice.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --openai_model "tts-1-hd" --openai_voice "fable"
+   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --model_name "tts-1-hd" --voice_name "fable"
    ```
 
 3. **OpenAI conversion with preview and text output**  

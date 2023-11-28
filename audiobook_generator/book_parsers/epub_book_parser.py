@@ -41,40 +41,39 @@ class EpubBookParser(BaseBookParser):
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []
-        for item in self.book.get_items():
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
-                content = item.get_content()
-                soup = BeautifulSoup(content, "lxml")
-                title = soup.title.string if soup.title else ""
-                raw = soup.get_text(strip=False)
-                logger.debug(f"Raw text: <{raw[:]}>")
+        for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+            content = item.get_content()
+            soup = BeautifulSoup(content, "lxml")
+            title = soup.title.string if soup.title else ""
+            raw = soup.get_text(strip=False)
+            logger.debug(f"Raw text: <{raw[:]}>")
 
-                # Replace excessive whitespaces and newline characters based on the mode
-                if self.config.newline_mode == "single":
-                    cleaned_text = re.sub(r"[\n]+", break_string, raw.strip())
-                elif self.config.newline_mode == "double":
-                    cleaned_text = re.sub(r"[\n]{2,}", break_string, raw.strip())
-                else:
-                    raise ValueError(f"Invalid newline mode: {self.config.newline_mode}")
+            # Replace excessive whitespaces and newline characters based on the mode
+            if self.config.newline_mode == "single":
+                cleaned_text = re.sub(r"[\n]+", break_string, raw.strip())
+            elif self.config.newline_mode == "double":
+                cleaned_text = re.sub(r"[\n]{2,}", break_string, raw.strip())
+            else:
+                raise ValueError(f"Invalid newline mode: {self.config.newline_mode}")
 
-                logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
-                cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-                logger.info(f"Cleaned text step 2: <{cleaned_text[:100]}>")
+            logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
+            cleaned_text = re.sub(r"\s+", " ", cleaned_text)
+            logger.debug(f"Cleaned text step 2: <{cleaned_text[:100]}>")
 
-                # Removes end-note numbers
-                if self.config.remove_endnotes:
-                    cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
-                    logger.info(f"Cleaned text step 4: <{cleaned_text[:100]}>")
+            # Removes end-note numbers
+            if self.config.remove_endnotes:
+                cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
+                logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
-                # fill in the title if it's missing
-                if not title:
-                    title = cleaned_text[:60]
-                logger.debug(f"Raw title: <{title}>")
-                title = self._sanitize_title(break_string)
-                logger.info(f"Sanitized title: <{title}>")
+            # fill in the title if it's missing
+            if not title:
+                title = cleaned_text[:60]
+            logger.debug(f"Raw title: <{title}>")
+            title = self._sanitize_title(break_string)
+            logger.debug(f"Sanitized title: <{title}>")
 
-                chapters.append((title, cleaned_text))
-                soup.decompose()
+            chapters.append((title, cleaned_text))
+            soup.decompose()
         return chapters
 
     def _sanitize_title(self, break_string) -> str:
