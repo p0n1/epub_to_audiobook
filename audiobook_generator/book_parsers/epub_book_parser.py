@@ -79,7 +79,7 @@ class EpubBookParser(BaseBookParser):
     def _sanitize_title(self, break_string) -> str:
         # replace MAGIC_BREAK_STRING with a blank space
         # strip incase leading bank is missing
-        title = self.get_book_title().replace(break_string, " ")
+        title = self.get_book_title().replace(break_string.strip(), " ")
         sanitized_title = re.sub(r"[^\w\s]", "", title, flags=re.UNICODE)
         sanitized_title = re.sub(r"\s+", "_", sanitized_title.strip())
         return sanitized_title

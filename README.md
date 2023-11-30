@@ -140,10 +140,7 @@ options:
   --remove_endnotes     This will remove endnote numbers from the end or
                         middle of sentences. This is useful for academic
                         books.
-
-  --voice_name VOICE_NAME
-                        Voice name for the text-to-speech service. You can use zh-CN-YunyeNeural for
-                        Chinese ebooks.
+                        
   --break_duration BREAK_DURATION
                         Break duration in milliseconds for the different
                         paragraphs or sections (default: 1250). Valid values
