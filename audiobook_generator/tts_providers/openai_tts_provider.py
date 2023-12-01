@@ -27,6 +27,7 @@ def get_supported_formats():
 
 class OpenAITTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
+        logger.setLevel(config.log)
         config.model_name = config.model_name or "tts-1"
         config.voice_name = config.voice_name or "alloy"
         config.output_format = config.output_format or "mp3"
@@ -66,7 +67,7 @@ class OpenAITTSProvider(BaseTTSProvider):
             )
             audio_segments.append(io.BytesIO(response.content))
 
-        with open(output_file, "wb", encoding='utf-8') as outfile:
+        with open(output_file, "wb") as outfile:
             for segment in audio_segments:
                 segment.seek(0)
                 outfile.write(segment.read())

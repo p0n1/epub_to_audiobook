@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class EpubBookParser(BaseBookParser):
     def __init__(self, config: GeneralConfig):
         super().__init__(config)
+        logger.setLevel(config.log)
         self.book = epub.read_epub(self.config.input_file)
 
     def __str__(self) -> str:
@@ -69,17 +70,17 @@ class EpubBookParser(BaseBookParser):
             if not title:
                 title = cleaned_text[:60]
             logger.debug(f"Raw title: <{title}>")
-            title = self._sanitize_title(break_string)
+            title = self._sanitize_title(title, break_string)
             logger.debug(f"Sanitized title: <{title}>")
 
             chapters.append((title, cleaned_text))
             soup.decompose()
         return chapters
 
-    def _sanitize_title(self, break_string) -> str:
+    def _sanitize_title(self, title, break_string) -> str:
         # replace MAGIC_BREAK_STRING with a blank space
         # strip incase leading bank is missing
-        title = self.get_book_title().replace(break_string.strip(), " ")
+        title = title.replace(break_string, " ")
         sanitized_title = re.sub(r"[^\w\s]", "", title, flags=re.UNICODE)
         sanitized_title = re.sub(r"\s+", "_", sanitized_title.strip())
         return sanitized_title

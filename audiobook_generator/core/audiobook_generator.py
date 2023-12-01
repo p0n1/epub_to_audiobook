@@ -28,6 +28,7 @@ def get_total_chars(chapters):
 class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
+        logger.setLevel(config.log)
 
     def __str__(self) -> str:
         return f"{self.config}"

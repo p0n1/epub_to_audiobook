@@ -19,6 +19,7 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
+        logger.setLevel(config.log)
         # TTS provider specific config
         config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
@@ -143,7 +144,7 @@ class AzureTTSProvider(BaseTTSProvider):
                     else:
                         raise e
 
-        with open(output_file, "wb", encoding='utf-8') as outfile:
+        with open(output_file, "wb") as outfile:
             for segment in audio_segments:
                 segment.seek(0)
                 outfile.write(segment.read())
