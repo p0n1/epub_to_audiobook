@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 WORKDIR /app
 
 # Set this as the default command
-ENTRYPOINT [ "python", "/app_src/epub_to_audiobook.py" ]
+ENTRYPOINT [ "python", "/app_src/main.py" ]
