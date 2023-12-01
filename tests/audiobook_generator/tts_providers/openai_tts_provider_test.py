@@ -22,6 +22,18 @@ class TestOpenAiTtsProvider(unittest.TestCase):
         self.assertIsInstance(tts_provider, OpenAITTSProvider)
         self.assertEqual(tts_provider.estimate_cost(1000000), 15)
 
+    @patch.dict('os.environ', {'OPENAI_API_KEY': 'fake_key'})
+    def test_default_args(self):
+        config = get_openai_config()
+        config.model_name = None
+        config.voice_name = None
+        config.output_format = None
+        tts_provider = get_tts_provider(config)
+        self.assertIsInstance(tts_provider, OpenAITTSProvider)
+        self.assertEqual(tts_provider.config.model_name, "tts-1")
+        self.assertEqual(tts_provider.config.voice_name, "alloy")
+        self.assertEqual(tts_provider.config.output_format, "mp3")
+
 
 if __name__ == '__main__':
     unittest.main()

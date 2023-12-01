@@ -27,12 +27,12 @@ def get_supported_formats():
 
 class OpenAITTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        self.model = config.model_name or "tts-1"
-        self.voice = config.voice_name or "alloy"
-        self.format = config.output_format or "mp3"
+        config.model_name = config.model_name or "tts-1"
+        config.voice_name = config.voice_name or "alloy"
+        config.output_format = config.output_format or "mp3"
 
         # per 1000 characters (0.03$ for HD model, 0.015$ for standard model)
-        self.price = 0.03 if self.model == "tts-1-hd" else 0.015
+        self.price = 0.03 if config.model_name == "tts-1-hd" else 0.015
         super().__init__(config)
 
         self.client = OpenAI()  # User should set OPENAI_API_KEY environment variable
@@ -59,10 +59,10 @@ class OpenAITTSProvider(BaseTTSProvider):
 
             # NO retry for OpenAI TTS because SDK has built-in retry logic
             response = self.client.audio.speech.create(
-                model=self.model,
-                voice=self.voice,
+                model=self.config.model_name,
+                voice=self.config.voice_name,
                 input=chunk,
-                response_format=self.format,
+                response_format=self.config.output_format,
             )
             audio_segments.append(io.BytesIO(response.content))
 

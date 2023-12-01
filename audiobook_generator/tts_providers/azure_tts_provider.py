@@ -20,9 +20,8 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
         # TTS provider specific config
-        self.break_duration = config.break_duration
-        self.voice_name = config.voice_name or "en-US-GuyNeural"
-        self.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
+        config.voice_name = config.voice_name or "en-US-GuyNeural"
+        config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
 
         # 16$ per 1 million characters
         # or 0.016$ per 1000 characters
@@ -49,7 +48,7 @@ class AzureTTSProvider(BaseTTSProvider):
     def __str__(self) -> str:
         return (
                 super().__str__()
-                + f", voice_name={self.voice_name}, language={self.config.language}, break_duration={self.break_duration}, output_format={self.output_format}"
+                + f", voice_name={self.config.voice_name}, language={self.config.language}, break_duration={self.config.break_duration}, output_format={self.config.output_format}"
         )
 
     def is_access_token_expired(self) -> bool:
@@ -105,12 +104,12 @@ class AzureTTSProvider(BaseTTSProvider):
             # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
             escaped_text = escaped_text.replace(
                 self.get_break_string().strip(),
-                f" <break time='{self.break_duration}ms' /> ",
+                f" <break time='{self.config.break_duration}ms' /> ",
             )  # strip in case leading bank is missing
             logger.info(
                 f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {len(text_chunks)}"
             )
-            ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.voice_name}'>{escaped_text}</voice></speak>"
+            ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.config.voice_name}'>{escaped_text}</voice></speak>"
             logger.debug(f"SSML: [{ssml}]")
 
             for retry in range(MAX_RETRIES):
@@ -118,7 +117,7 @@ class AzureTTSProvider(BaseTTSProvider):
                 headers = {
                     "Authorization": f"Bearer {self.access_token}",
                     "Content-Type": "application/ssml+xml",
-                    "X-Microsoft-OutputFormat": self.output_format,
+                    "X-Microsoft-OutputFormat": self.config.output_format,
                     "User-Agent": "Python",
                 }
                 try:
@@ -155,24 +154,24 @@ class AzureTTSProvider(BaseTTSProvider):
         return " @BRK#"
 
     def get_output_file_extension(self):
-        if self.output_format.startswith("amr"):
+        if self.config.output_format.startswith("amr"):
             return "amr"
-        elif self.output_format.startswith("ogg"):
+        elif self.config.output_format.startswith("ogg"):
             return "ogg"
-        elif self.output_format.endswith("truesilk"):
+        elif self.config.output_format.endswith("truesilk"):
             return "silk"
-        elif self.output_format.endswith("pcm"):
+        elif self.config.output_format.endswith("pcm"):
             return "pcm"
-        elif self.output_format.startswith("raw"):
+        elif self.config.output_format.startswith("raw"):
             return "wav"
-        elif self.output_format.startswith("webm"):
+        elif self.config.output_format.startswith("webm"):
             return "webm"
-        elif self.output_format.endswith("opus"):
+        elif self.config.output_format.endswith("opus"):
             return "opus"
-        elif self.output_format.endswith("mp3"):
+        elif self.config.output_format.endswith("mp3"):
             return "mp3"
         else:
-            raise NotImplementedError(f"Unknown file extension for output format: {self.output_format}")
+            raise NotImplementedError(f"Unknown file extension for output format: {self.config.output_format}")
 
     def validate_config(self):
         # TODO: Need to dig into Azure properties, im not familiar with them, but look at OpenAI as ref example
