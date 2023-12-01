@@ -27,13 +27,13 @@ def get_supported_formats():
 
 class OpenAITTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        super().__init__(config)
         self.model = config.model_name or "tts-1"
         self.voice = config.voice_name or "alloy"
         self.format = config.output_format or "mp3"
 
-        self.price = 0.03 if self.model == "tts-1-hd" else 0.015
         # per 1000 characters (0.03$ for HD model, 0.015$ for standard model)
+        self.price = 0.03 if self.model == "tts-1-hd" else 0.015
+        super().__init__(config)
 
         self.client = OpenAI()  # User should set OPENAI_API_KEY environment variable
 

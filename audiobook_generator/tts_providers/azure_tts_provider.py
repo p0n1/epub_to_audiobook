@@ -19,17 +19,18 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        super().__init__(config)
-
         # TTS provider specific config
         self.break_duration = config.break_duration
         self.voice_name = config.voice_name or "en-US-GuyNeural"
         self.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
 
-        self.price = 16  # 16$ per 1 million characters
+        # 16$ per 1 million characters
+        # or 0.016$ per 1000 characters
+        self.price = 0.016
         # access token and expiry time
         self.access_token = None
         self.token_expiry_time = datetime.utcnow()
+        super().__init__(config)
 
         subscription_key = os.environ.get("MS_TTS_KEY")
         region = os.environ.get("MS_TTS_REGION")
@@ -178,4 +179,4 @@ class AzureTTSProvider(BaseTTSProvider):
         pass
 
     def estimate_cost(self, total_chars):
-        return math.ceil(total_chars / 1000000) * self.price
+        return math.ceil(total_chars / 1000) * self.price
