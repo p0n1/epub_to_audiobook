@@ -66,17 +66,17 @@ When you import the generated MP3 files into Audiobookshelf, the chapter titles 
 To convert an EPUB ebook to an audiobook, run the following command, specifying the TTS provider of your choice with the `--tts` option:
 
 ```bash
-python3 epub_to_audiobook.py <input_file> <output_folder> [options]
+python3 main.py <input_file> <output_folder> [options]
 ```
 
 To check the latest option descriptions for this script, you can run the following command in the terminal:
 
 ```bash
-python3 epub_to_audiobook.py -h
+python3 main.py -h
 ```
 
 ```bash
-usage: epub_to_audiobook.py [-h] 
+usage: main.py [-h] 
                             [--tts {azure,openai}] 
                             [--log LOG]
                             [--preview] 
@@ -157,7 +157,7 @@ options:
 **Example**:
 
 ```bash
-python3 epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder
+python3 main.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder
 ```
 
 Executing the above command will generate a directory named `output_folder` and save the MP3 files for each chapter inside it. Once generated, you can import these audio files into [Audiobookshelf](https://github.com/advplyr/audiobookshelf) or play them with any audio player of your choice.
@@ -169,7 +169,7 @@ Before converting your epub file to an audiobook, you can use the `--preview` op
 **Example**:
 
 ```bash
-python3 epub_to_audiobook.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder --preview
+python3 main.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder --preview
 ```
 
 ## Using with Docker
@@ -231,7 +231,7 @@ You can also listen to samples of the available voices in the [Azure TTS Voice G
 For example, if you want to use a British English female voice for the conversion, you can use the following command:
 
 ```bash
-python3 epub_to_audiobook.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
+python3 main.py <input_file> <output_folder> --voice_name en-GB-LibbyNeural --language en-GB
 ```
 
 For OpenAI TTS, you can specify the model, voice, and format options using `--model_name`, `--voice_name`, and `--output_format`, respectively.
@@ -246,21 +246,21 @@ Here are some examples that demonstrate various option combinations:
    This command will convert an EPUB file to an audiobook using Azure's default TTS settings.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts azure
    ```
 
 2. **Azure conversion with custom language, voice and logging level**  
    Converts an EPUB file to an audiobook with a specified voice and a custom log level for debugging purposes.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure --language zh-CN --voice_name "zh-CN-YunyeNeural" --log DEBUG
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts azure --language zh-CN --voice_name "zh-CN-YunyeNeural" --log DEBUG
    ```
 
 3. **Azure conversion with chapter range and break duration**  
    Converts a specified range of chapters from an EPUB file to an audiobook with custom break duration between paragraphs.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts azure --chapter_start 5 --chapter_end 10 --break_duration "1500"
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts azure --chapter_start 5 --chapter_end 10 --break_duration "1500"
    ```
 
 ### Examples Using OpenAI TTS
@@ -269,21 +269,21 @@ Here are some examples that demonstrate various option combinations:
    This command will convert an EPUB file to an audiobook using OpenAI's default TTS settings.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai
    ```
 
 2. **OpenAI conversion with HD model and specific voice**  
    Converts an EPUB file to an audiobook using the high-definition OpenAI model and a specific voice choice.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --model_name "tts-1-hd" --voice_name "fable"
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai --model_name "tts-1-hd" --voice_name "fable"
    ```
 
 3. **OpenAI conversion with preview and text output**  
    Enables preview mode and text output, which will display the chapter index and titles instead of converting them and will also export the text.
 
    ```sh
-   python3 epub_to_audiobook.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
    ```
 
 ## Troubleshooting
