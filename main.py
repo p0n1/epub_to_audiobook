@@ -73,6 +73,27 @@ def handle_args():
         "--voice_name",
         help="Various TTS providers has different voice names, look up for your provider settings.",
     )
+
+    parser.add_argument(
+        "--voice_rate",
+        help="Speaking rate of the text.Valid relative values range from -50% to 100%.",
+    )
+
+    parser.add_argument(
+        "--voice_volume",
+        help="Volume level of the speaking voice. Valid relative values floor to -100%",
+    )
+
+    parser.add_argument(
+        "--voice_pitch",
+        help="Baseline pitch for the text.Valid relative values like -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5 times the original audio.",
+    )
+
+    parser.add_argument(
+        "--proxy",
+        help=r"Proxy server for the TTS provider. Format: http://[username:password@]proxy.server:port",
+    )
+
     parser.add_argument(
         "--break_duration",
         default="1250",

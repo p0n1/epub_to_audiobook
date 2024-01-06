@@ -4,3 +4,4 @@ mutagen==1.47.0
 openai==1.2.2
 requests==2.31.0
 socksio==1.0.0
+edge-tts==6.1.9
