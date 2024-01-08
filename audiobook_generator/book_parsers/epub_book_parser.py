@@ -45,7 +45,12 @@ class EpubBookParser(BaseBookParser):
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml")
-            title = soup.title.string if soup.title else ""
+            title = ""
+            title_levels = ['title', 'h1', 'h2', 'h3']
+            for level in title_levels:
+                if soup.find(level):
+                    title = soup.find(level).text
+                    break
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
@@ -67,7 +72,7 @@ class EpubBookParser(BaseBookParser):
                 logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
             # fill in the title if it's missing
-            if not title:
+            if title == "":
                 title = cleaned_text[:60]
             logger.debug(f"Raw title: <{title}>")
             title = self._sanitize_title(title, break_string)
@@ -77,7 +82,8 @@ class EpubBookParser(BaseBookParser):
             soup.decompose()
         return chapters
 
-    def _sanitize_title(self, title, break_string) -> str:
+    @staticmethod
+    def _sanitize_title(title, break_string) -> str:
         # replace MAGIC_BREAK_STRING with a blank space
         # strip incase leading bank is missing
         title = title.replace(break_string, " ")
