@@ -5,7 +5,6 @@ from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
 from audiobook_generator.tts_providers.base_tts_provider import get_supported_tts_providers
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -75,31 +74,6 @@ def handle_args():
     )
 
     parser.add_argument(
-        "--voice_rate",
-        help="Speaking rate of the text.Valid relative values range from -50% to 100%.",
-    )
-
-    parser.add_argument(
-        "--voice_volume",
-        help="Volume level of the speaking voice. Valid relative values floor to -100%",
-    )
-
-    parser.add_argument(
-        "--voice_pitch",
-        help="Baseline pitch for the text.Valid relative values like -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5 times the original audio.",
-    )
-
-    parser.add_argument(
-        "--proxy",
-        help=r"Proxy server for the TTS provider. Format: http://[username:password@]proxy.server:port",
-    )
-
-    parser.add_argument(
-        "--break_duration",
-        default="1250",
-        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.",
-    )
-    parser.add_argument(
         "--output_format",
         help="Output format for the text-to-speech service. Supported format depends on selected TTS provider",
     )
@@ -107,6 +81,43 @@ def handle_args():
     parser.add_argument(
         "--model_name",
         help="Various TTS providers has different neural model names",
+    )
+
+    edge_tts_group = parser.add_argument_group(title="edge specific")
+    edge_tts_group.add_argument(
+        "--voice_rate",
+        help='''
+            Speaking rate of the text.Valid relative values range from -50%%(--xxx='-50%%') to +100%%. 
+            For negative value use format --arg=value,
+        '''
+    )
+
+    edge_tts_group.add_argument(
+        "--voice_volume",
+        help='''
+            Volume level of the speaking voice. Valid relative values floor to -100%%.
+            For negative value use format --arg=value,
+        '''
+    )
+
+    edge_tts_group.add_argument(
+        "--voice_pitch",
+        help='''
+            Baseline pitch for the text.Valid relative values like -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5 times the original audio.
+            For negative value use format --arg=value,
+        '''
+    )
+
+    edge_tts_group.add_argument(
+        "--proxy",
+        help="Proxy server for the TTS provider. Format: http://[username:password@]proxy.server:port",
+    )
+
+    azure_tts_group = parser.add_argument_group(title="azure specific")
+    azure_tts_group.add_argument(
+        "--break_duration",
+        default="1250",
+        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.",
     )
 
     args = parser.parse_args()
