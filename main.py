@@ -87,7 +87,7 @@ def handle_args():
     edge_tts_group.add_argument(
         "--voice_rate",
         help='''
-            Speaking rate of the text.Valid relative values range from -50%%(--xxx='-50%%') to +100%%. 
+            Speaking rate of the text. Valid relative values range from -50%%(--xxx='-50%%') to +100%%. 
             For negative value use format --arg=value,
         '''
     )
