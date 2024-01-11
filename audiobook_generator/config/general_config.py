@@ -23,5 +23,11 @@ class GeneralConfig:
         # TTS provider: Azure specific arguments
         self.break_duration = args.break_duration
 
+        # TTS provider: Edge specific arguments
+        self.voice_rate = args.voice_rate
+        self.voice_volume = args.voice_volume
+        self.voice_pitch = args.voice_pitch
+        self.proxy = args.proxy
+
     def __str__(self):
         return ', '.join(f"{key}={value}" for key, value in self.__dict__.items())
