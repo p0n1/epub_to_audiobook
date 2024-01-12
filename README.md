@@ -306,6 +306,7 @@ This may be because the Python version you are using is [less than 3.8](https://
 ## Related Projects
 
 - [Epub to Audiobook (M4B)](https://github.com/duplaja/epub-to-audiobook-hf): Epub to MB4 Audiobook, with StyleTTS2 via HuggingFace Spaces API.
+- [Storyteller](https://smoores.gitlab.io/storyteller/): A self-hosted platform for automatically syncing ebooks and audiobooks.
 
 ## License
 
