@@ -35,6 +35,11 @@ def handle_args():
         help="Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index, titles, and character counts.",
     )
     parser.add_argument(
+        "--no_prompt",
+        action="store_true",
+        help="Don't ask the user if they wish to continue after estimating the cloud cost for TTS. Useful for scripting.",
+    )
+    parser.add_argument(
         "--language",
         default="en-US",
         help="Language for the text-to-speech service (default: en-US). For Azure TTS (--tts=azure), check https://learn.microsoft.com/en-us/azure/ai-services/speech-service/language-support?tabs=tts#text-to-speech for supported languages. For OpenAI TTS (--tts=openai), their API detects the language automatically. But setting this will also help on splitting the text into chunks with different strategies in this tool, especially for Chinese characters. For Chinese books, use zh-CN, zh-TW, or zh-HK.",
