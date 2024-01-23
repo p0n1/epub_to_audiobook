@@ -80,9 +80,16 @@ python3 main.py -h
 ```
 
 ```bash
-usage: main.py [-h] [--tts {azure,openai,edge}] [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preview] [--language LANGUAGE] [--newline_mode {single,double}]
-               [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END] [--output_text] [--remove_endnotes] [--voice_name VOICE_NAME] [--output_format OUTPUT_FORMAT]
-               [--model_name MODEL_NAME] [--voice_rate VOICE_RATE] [--voice_volume VOICE_VOLUME] [--voice_pitch VOICE_PITCH] [--proxy PROXY] [--break_duration BREAK_DURATION]
+usage: main.py [-h] [--tts {azure,openai,edge}]
+               [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preview]
+               [--no_prompt] [--language LANGUAGE]
+               [--newline_mode {single,double}]
+               [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
+               [--output_text] [--remove_endnotes] [--voice_name VOICE_NAME]
+               [--output_format OUTPUT_FORMAT] [--model_name MODEL_NAME]
+               [--voice_rate VOICE_RATE] [--voice_volume VOICE_VOLUME]
+               [--voice_pitch VOICE_PITCH] [--proxy PROXY]
+               [--break_duration BREAK_DURATION]
                input_file output_folder
 
 Convert text book to audiobook
@@ -94,44 +101,80 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --tts {azure,openai,edge}
-                        Choose TTS provider (default: azure). azure: Azure Cognitive Services, openai: OpenAI TTS API. When using azure, environment variables MS_TTS_KEY and MS_TTS_REGION
-                        must be set. When using openai, environment variable OPENAI_API_KEY must be set.
+                        Choose TTS provider (default: azure). azure: Azure
+                        Cognitive Services, openai: OpenAI TTS API. When using
+                        azure, environment variables MS_TTS_KEY and
+                        MS_TTS_REGION must be set. When using openai,
+                        environment variable OPENAI_API_KEY must be set.
   --log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                        Log level (default: INFO), can be DEBUG, INFO, WARNING, ERROR, CRITICAL
-  --preview             Enable preview mode. In preview mode, the script will not convert the text to speech. Instead, it will print the chapter index, titles, and character counts.
-  --language LANGUAGE   Language for the text-to-speech service (default: en-US). For Azure TTS (--tts=azure), check https://learn.microsoft.com/en-us/azure/ai-services/speech-
-                        service/language-support?tabs=tts#text-to-speech for supported languages. For OpenAI TTS (--tts=openai), their API detects the language automatically. But setting
-                        this will also help on splitting the text into chunks with different strategies in this tool, especially for Chinese characters. For Chinese books, use zh-CN, zh-
+                        Log level (default: INFO), can be DEBUG, INFO,
+                        WARNING, ERROR, CRITICAL
+  --preview             Enable preview mode. In preview mode, the script will
+                        not convert the text to speech. Instead, it will print
+                        the chapter index, titles, and character counts.
+  --no_prompt           Don't ask the user if they wish to continue after
+                        estimating the cloud cost for TTS. Useful for
+                        scripting.
+  --language LANGUAGE   Language for the text-to-speech service (default: en-
+                        US). For Azure TTS (--tts=azure), check
+                        https://learn.microsoft.com/en-us/azure/ai-
+                        services/speech-service/language-
+                        support?tabs=tts#text-to-speech for supported
+                        languages. For OpenAI TTS (--tts=openai), their API
+                        detects the language automatically. But setting this
+                        will also help on splitting the text into chunks with
+                        different strategies in this tool, especially for
+                        Chinese characters. For Chinese books, use zh-CN, zh-
                         TW, or zh-HK.
   --newline_mode {single,double}
-                        Choose the mode of detecting new paragraphs: 'single' or 'double'. 'single' means a single newline character, while 'double' means two consecutive newline
-                        characters. (default: double, works for most ebooks but will detect less paragraphs for some ebooks)
+                        Choose the mode of detecting new paragraphs: 'single'
+                        or 'double'. 'single' means a single newline
+                        character, while 'double' means two consecutive
+                        newline characters. (default: double, works for most
+                        ebooks but will detect less paragraphs for some
+                        ebooks)
   --chapter_start CHAPTER_START
                         Chapter start index (default: 1, starting from 1)
   --chapter_end CHAPTER_END
-                        Chapter end index (default: -1, meaning to the last chapter)
-  --output_text         Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output folder specified.
-  --remove_endnotes     This will remove endnote numbers from the end or middle of sentences. This is useful for academic books.
+                        Chapter end index (default: -1, meaning to the last
+                        chapter)
+  --output_text         Enable Output Text. This will export a plain text file
+                        for each chapter specified and write the files to the
+                        output folder specified.
+  --remove_endnotes     This will remove endnote numbers from the end or
+                        middle of sentences. This is useful for academic
+                        books.
   --voice_name VOICE_NAME
-                        Various TTS providers has different voice names, look up for your provider settings.
+                        Various TTS providers has different voice names, look
+                        up for your provider settings.
   --output_format OUTPUT_FORMAT
-                        Output format for the text-to-speech service. Supported format depends on selected TTS provider
+                        Output format for the text-to-speech service.
+                        Supported format depends on selected TTS provider
   --model_name MODEL_NAME
                         Various TTS providers has different neural model names
 
 edge specific:
   --voice_rate VOICE_RATE
-                        Speaking rate of the text. Valid relative values range from -50%(--xxx='-50%') to +100%. For negative value use format --arg=value,
+                        Speaking rate of the text. Valid relative values range
+                        from -50%(--xxx='-50%') to +100%. For negative value
+                        use format --arg=value,
   --voice_volume VOICE_VOLUME
-                        Volume level of the speaking voice. Valid relative values floor to -100%. For negative value use format --arg=value,
+                        Volume level of the speaking voice. Valid relative
+                        values floor to -100%. For negative value use format
+                        --arg=value,
   --voice_pitch VOICE_PITCH
-                        Baseline pitch for the text.Valid relative values like -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5 times the original audio. For negative value use
+                        Baseline pitch for the text.Valid relative values like
+                        -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5
+                        times the original audio. For negative value use
                         format --arg=value,
-  --proxy PROXY         Proxy server for the TTS provider. Format: http://[username:password@]proxy.server:port
+  --proxy PROXY         Proxy server for the TTS provider. Format:
+                        http://[username:password@]proxy.server:port
 
 azure specific:
   --break_duration BREAK_DURATION
-                        Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.
+                        Break duration in milliseconds for the different
+                        paragraphs or sections (default: 1250). Valid values
+                        range from 0 to 5000 milliseconds.
 ```  
 
 **Example**:
@@ -167,18 +210,20 @@ docker pull ghcr.io/p0n1/epub_to_audiobook:latest
 Then, you can run the tool with the following command:
 
 ```bash
-docker run --rm -v ./:/app -e MS_TTS_KEY=$MS_TTS_KEY -e MS_TTS_REGION=$MS_TTS_REGION ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts azure
+docker run -i -t --rm -v ./:/app -e MS_TTS_KEY=$MS_TTS_KEY -e MS_TTS_REGION=$MS_TTS_REGION ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts azure
 ```
 
 For OpenAI, you can run:
 
 ```bash
-docker run --rm -v ./:/app -e OPENAI_API_KEY=$OPENAI_API_KEY ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts openai
+docker run -i -t --rm -v ./:/app -e OPENAI_API_KEY=$OPENAI_API_KEY ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts openai
 ```
 
 Replace `$MS_TTS_KEY` and `$MS_TTS_REGION` with your Azure Text-to-Speech API credentials. Replace `$OPENAI_API_KEY` with your OpenAI API key. Replace `your_book.epub` with the name of the input EPUB file, and `audiobook_output` with the name of the directory where you want to save the output files.
 
 The `-v ./:/app` option mounts the current directory (`.`) to the `/app` directory in the Docker container. This allows the tool to read the input file and write the output files to your local file system.
+
+The `-i` and `-t` options are required to enable interactive mode and allocate a pseudo-TTY.
 
 **You can also check the [this example config file](./docker-compose.example.yml) for docker compose usage.**
 
