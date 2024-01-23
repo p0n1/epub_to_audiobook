@@ -9,8 +9,7 @@ from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
 logger = logging.getLogger(__name__)
 
 
-def confirm_conversion(price):
-    print(f"Estimate book voiceover would cost you roughly: ${price:.2f}")
+def confirm_conversion():
     print("Do you want to continue? (y/n)")
     answer = input()
     if answer.lower() != "y":
@@ -67,7 +66,15 @@ class AudiobookGenerator:
             total_characters = get_total_chars(chapters)
             logger.info(f"✨ Total characters in selected book: {total_characters} ✨")
             rough_price = tts_provider.estimate_cost(total_characters)
-            confirm_conversion(rough_price)
+            print(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
+
+            # Prompt user to continue if not in preview mode
+            if self.config.no_prompt:
+                logger.info(f"Skipping prompt as passed parameter no_prompt")
+            if self.config.preview:
+                logger.info(f"Skipping prompt as in preview mode")
+            else:
+                confirm_conversion()
 
             # Loop through each chapter and convert it to speech using the provided TTS provider
             for idx, (title, text) in enumerate(chapters, start=1):
