@@ -1,8 +1,11 @@
 import asyncio
 import logging
 import math
+import io
 
 from edge_tts.communicate import Communicate
+from typing import Union, Optional
+from pydub import AudioSegment
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
@@ -317,6 +320,104 @@ def get_supported_voices():
         'zu-ZA-ThembaNeural': 'zu-ZA',
     }
 
+class NoPausesFound(Exception):
+    def __init__(self, description = None) -> None:
+        self.description = (f'No pauses were found in the text. Please '
+            + f'consider using `edge_tts.Communicate` instead.')
+
+        super().__init__(self.description)
+
+class CommWithPauses(Communicate):
+    # This class uses edge_tts to generate text
+    # but with pauses for example:- text: 'Hello
+    # this is simple text. [pause: 2s] Paused 2s'
+    def __init__(
+        self,
+        text: str,
+        voice_name: str,
+        **kwargs
+    ) -> None:
+        super().__init__(text, voice_name, **kwargs)
+        self.parsed = self.parse_text()
+        self.file = io.BytesIO()
+
+    def parse_text(self):
+        if not "[pause:" in self.text:
+            raise NoPausesFound
+
+        parts = self.text.split("[pause:")
+        for part in parts:
+            if "]" in part:
+                pause_time, content = part.split("]", 1)
+                pause_time = self.parse_time(pause_time)
+
+                yield pause_time, content.strip()
+
+            else:
+                content = part
+                yield 0, content.strip()
+
+    def parse_time(self, time_str: str) -> int:
+        if time_str[-2:] == 'ms':
+            unit = 'ms'
+            time_value = int(time_str[:-2])
+            return time_value
+        else:
+            raise ValueError(f"Invalid time unit! only ms are allowed")
+
+    async def chunkify(self):
+        for pause_time, content in self.parsed:
+            if not pause_time and not content:
+                pass
+
+            elif not pause_time and content:
+                audio_bytes = await self.generate_audio(content)
+                self.file.write(audio_bytes)
+
+            elif not content and pause_time:
+                pause_bytes = self.generate_pause(pause_time)
+                self.file.write(pause_bytes)
+
+            else:
+                pause_bytes = self.generate_pause(pause_time)
+                audio_bytes = await self.generate_audio(content)
+                self.file.write(pause_bytes)
+                self.file.write(audio_bytes)
+
+    def generate_pause(self, time: int) -> bytes:
+        # pause time should be provided in ms
+        silent: AudioSegment = AudioSegment.silent(time, 24000)
+        return silent.raw_data
+
+    async def generate_audio(self, text: str) -> bytes:
+        # this genertes the real TTS using edge_tts for this part.
+        temp_chunk = io.BytesIO()
+        self.text = text
+        async for chunk in self.stream():
+            if chunk['type'] == 'audio':
+                temp_chunk.write(chunk['data'])
+
+        temp_chunk.seek(0)
+        decoded_chunk = AudioSegment.from_mp3(temp_chunk)
+        return decoded_chunk.raw_data
+
+    async def save(
+        self,
+        audio_fname: Union[str, bytes],
+        metadata_fname: Optional[Union[str, bytes]] = None,
+    ) -> None:
+        # Save the audio and metadata to the specified files.
+        await self.chunkify()
+        await super().save(audio_fname, metadata_fname)
+
+        self.file.seek(0)
+        audio: AudioSegment = AudioSegment.from_raw(
+            self.file,
+            sample_width=2,
+            frame_rate=24000,
+            channels=1
+        )
+        audio.export(audio_fname)
 
 class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
@@ -347,15 +448,21 @@ class EdgeTTSProvider(BaseTTSProvider):
             output_file: str,
             audio_tags: AudioTags,
     ):
+        # Replace break string with pause tag
+        text = text.replace(
+            self.get_break_string().strip(),
+            f"[pause: {self.config.break_duration}ms]"
+        )
 
-        communicate = Communicate(
-            text,
-            self.config.voice_name,
+        communicate = CommWithPauses(
+            text=text,
+            voice_name=self.config.voice_name,
             rate=self.config.voice_rate,
             volume=self.config.voice_volume,
             pitch=self.config.voice_pitch,
             proxy=self.config.proxy
         )
+
         asyncio.run(
             communicate.save(output_file)
         )
@@ -366,7 +473,7 @@ class EdgeTTSProvider(BaseTTSProvider):
         return math.ceil(total_chars / 1000) * self.price
 
     def get_break_string(self):
-        return "    "
+        return " @BRK#"
 
     def get_output_file_extension(self):
         if self.config.output_format.startswith("amr"):
