@@ -71,7 +71,7 @@ class AudiobookGenerator:
             # Prompt user to continue if not in preview mode
             if self.config.no_prompt:
                 logger.info(f"Skipping prompt as passed parameter no_prompt")
-            if self.config.preview:
+            elif self.config.preview:
                 logger.info(f"Skipping prompt as in preview mode")
             else:
                 confirm_conversion()
