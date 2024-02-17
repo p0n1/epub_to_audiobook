@@ -2,7 +2,6 @@ import asyncio
 import logging
 import math
 import io
-import requests
 
 from edge_tts.communicate import Communicate
 from typing import Union, Optional
@@ -18,22 +17,20 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 12  # Max_retries constant for network errors
 
 
-def get_supported_voices():
+async def get_supported_voices():
     # List all available voices and their attributes.
     # This pulls data from the URL used by Microsoft Edge to return a list of
     # all available voices.
     # Returns:
     #     dict: A dictionary of voice attributes.
-    trusted_client_token = "6A5AA1D4EAFF4E9FB37E23D68491D6F4"
-    
-    voice_list_url = "https://speech.platform.bing.com/consumer/speech/synthesize/" \
-    + "readaloud/voices/list?trustedclienttoken=" \
-    + trusted_client_token
-    
-    voice_list = requests.get(voice_list_url).json()
+    voices = await list_voices()
+    voices = sorted(voices, key=lambda voice: voice["ShortName"])
+
     result = {}
-    for item in voice_list:
-        result[item['ShortName']] = item['Locale']
+
+    for voice in voices:
+        result[voice["ShortName"]] = voice["Locale"]
+       
     return result
     
 class NoPausesFound(Exception):
@@ -154,8 +151,8 @@ class EdgeTTSProvider(BaseTTSProvider):
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def validate_config(self):
-        if self.config.voice_name not in get_supported_voices():
+    async def validate_config(self):
+        if self.config.voice_name not in await get_supported_voices():
             raise ValueError(f"EdgeTTS: Unsupported voice name: {self.config.voice_name}")
 
     def text_to_speech(
