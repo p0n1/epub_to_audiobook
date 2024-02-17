@@ -94,8 +94,8 @@ class CommWithPauses(Communicate):
         temp_chunk.seek(0)
         # handle the case where the chunk is empty
         try:
-            decoded_chunk = AudioSegment.mp3(temp_chunk)
-        except Exception as e:
+            decoded_chunk = AudioSegment.from_mp3(temp_chunk)
+        except:
             decoded_chunk = AudioSegment.silent(0, 24000)
         return decoded_chunk.raw_data
 
