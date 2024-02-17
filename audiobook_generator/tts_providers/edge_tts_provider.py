@@ -62,39 +62,20 @@ class CommWithPauses(Communicate):
         for part in parts:
             if "]" in part:
                 pause_time, content = part.split("]", 1)
-                pause_time = self.parse_time(pause_time)
-
-                yield pause_time, content.strip()
+                yield int(pause_time), content.strip()
 
             else:
                 content = part
                 yield 0, content.strip()
 
-    def parse_time(self, time_str: str) -> int:
-        if time_str[-2:] == 'ms':
-            unit = 'ms'
-            time_value = int(time_str[:-2])
-            return time_value
-        else:
-            raise ValueError(f"Invalid time unit! only ms are allowed")
-
     async def chunkify(self):
         for pause_time, content in self.parsed:
-            if not pause_time and not content:
-                pass
-
-            elif not pause_time and content:
-                audio_bytes = await self.generate_audio(content)
-                self.file.write(audio_bytes)
-
-            elif not content and pause_time:
+            if pause_time:
                 pause_bytes = self.generate_pause(pause_time)
                 self.file.write(pause_bytes)
 
-            else:
-                pause_bytes = self.generate_pause(pause_time)
+            if content:
                 audio_bytes = await self.generate_audio(content)
-                self.file.write(pause_bytes)
                 self.file.write(audio_bytes)
 
     def generate_pause(self, time: int) -> bytes:
@@ -111,7 +92,11 @@ class CommWithPauses(Communicate):
                 temp_chunk.write(chunk['data'])
 
         temp_chunk.seek(0)
-        decoded_chunk = AudioSegment.from_mp3(temp_chunk)
+        # handle the case where the chunk is empty
+        try:
+            decoded_chunk = AudioSegment.mp3(temp_chunk)
+        except Exception as e:
+            decoded_chunk = AudioSegment.silent(0, 24000)
         return decoded_chunk.raw_data
 
     async def save(
@@ -164,7 +149,7 @@ class EdgeTTSProvider(BaseTTSProvider):
         # Replace break string with pause tag
         text = text.replace(
             self.get_break_string().strip(),
-            f"[pause: {self.config.break_duration}ms]"
+            f"[pause: {self.config.break_duration}]"
         )
 
         communicate = CommWithPauses(
