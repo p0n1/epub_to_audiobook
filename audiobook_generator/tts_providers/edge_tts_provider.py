@@ -3,7 +3,7 @@ import logging
 import math
 import io
 
-from edge_tts.communicate import Communicate
+from edge_tts import Communicate, list_voices
 from typing import Union, Optional
 from pydub import AudioSegment
 
