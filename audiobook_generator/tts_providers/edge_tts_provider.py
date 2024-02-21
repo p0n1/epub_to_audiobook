@@ -32,13 +32,6 @@ async def get_supported_voices():
         result[voice["ShortName"]] = voice["Locale"]
        
     return result
-    
-class NoPausesFound(Exception):
-    def __init__(self, description = None) -> None:
-        self.description = (f'No pauses were found in the text. Please '
-            + f'consider using `edge_tts.Communicate` instead.')
-
-        super().__init__(self.description)
 
 class CommWithPauses(Communicate):
     # This class uses edge_tts to generate text
@@ -56,8 +49,8 @@ class CommWithPauses(Communicate):
 
     def parse_text(self):
         if not "[pause:" in self.text:
-            raise NoPausesFound
-
+            return [(0, self.text)]
+        
         parts = self.text.split("[pause:")
         for part in parts:
             if "]" in part:
