@@ -45,12 +45,6 @@ class EpubBookParser(BaseBookParser):
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml")
-            title = ""
-            title_levels = ['title', 'h1', 'h2', 'h3']
-            for level in title_levels:
-                if soup.find(level):
-                    title = soup.find(level).text
-                    break
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
@@ -71,9 +65,29 @@ class EpubBookParser(BaseBookParser):
                 cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
                 logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
-            # fill in the title if it's missing
-            if title == "":
+            # Get proper chapter title
+            if self.config.title_mode == "auto":
+                title = ""
+                title_levels = ['title', 'h1', 'h2', 'h3']
+                for level in title_levels:
+                    if soup.find(level):
+                        title = soup.find(level).text
+                        break
+                if title == "" or re.match(r'^\d{1,3}$',title) is not None:
+                    title = cleaned_text[:60]
+            elif self.config.title_mode == "tag_text":
+                title = ""
+                title_levels = ['title', 'h1', 'h2', 'h3']
+                for level in title_levels:
+                    if soup.find(level):
+                        title = soup.find(level).text
+                        break
+                if title == "":
+                    title = "<blank>"
+            elif self.config.title_mode == "first_few":
                 title = cleaned_text[:60]
+            else:
+                raise ValueError("Unsupported title_mode")
             logger.debug(f"Raw title: <{title}>")
             title = self._sanitize_title(title, break_string)
             logger.debug(f"Sanitized title: <{title}>")
