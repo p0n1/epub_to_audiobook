@@ -73,8 +73,8 @@ class AudiobookGenerator:
                 logger.info(f"Skipping prompt as passed parameter no_prompt")
             elif self.config.preview:
                 logger.info(f"Skipping prompt as in preview mode")
-            else:
-                confirm_conversion()
+            # else:
+                # confirm_conversion()
 
             # Loop through each chapter and convert it to speech using the provided TTS provider
             for idx, (title, text) in enumerate(chapters, start=1):
