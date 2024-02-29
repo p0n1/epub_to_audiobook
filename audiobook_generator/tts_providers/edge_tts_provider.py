@@ -48,18 +48,20 @@ class CommWithPauses(Communicate):
         self.file = io.BytesIO()
 
     def parse_text(self):
+        results = []
         if not "[pause:" in self.text:
             return [(0, self.text)]
-        
+
         parts = self.text.split("[pause:")
         for part in parts:
             if "]" in part:
                 pause_time, content = part.split("]", 1)
-                yield int(pause_time), content.strip()
+                results.append((int(pause_time), content.strip()))
 
             else:
                 content = part
-                yield 0, content.strip()
+                results.append((0, content.strip()))
+        return results
 
     async def chunkify(self):
         for pause_time, content in self.parsed:
@@ -108,7 +110,9 @@ class CommWithPauses(Communicate):
             frame_rate=24000,
             channels=1
         )
-        audio.export(audio_fname)
+        # audio.export(audio_fname)
+        # 压缩音频
+        audio.export(audio_fname, bitrate="24k")
 
 class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
