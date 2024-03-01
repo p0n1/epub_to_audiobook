@@ -153,34 +153,39 @@ class AudiobookGenerator:
                 # confirm_conversion()
 
             # Loop through each chapter and convert it to speech using the provided TTS provider
-            with ThreadPoolExecutor(max_workers=5) as executor:  # 可以根据您的系统调整max_workers的数量
-                futures = [executor.submit(self.process_chapter, idx, title, text, self.config, tts_provider, book_parser, chapters)
-                           for idx, (title, text) in enumerate(chapters, start=1)]
-
-                for future in as_completed(futures):
-                    future.result()  # 这里可以获取函数的返回值，如果有的话
+            convert_chapters_concurrently(chapters, self.config, tts_provider, book_parser)
 
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
             exit()
 
-    def process_chapter(self, idx, title, text, config, tts_provider, book_parser, chapters):
-        if idx < config.chapter_start:
-            return
-        if idx > config.chapter_end:
-            return
-        print(f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}")
+def convert_chapter_to_speech(text, output_folder, tts_provider, audio_tags):
+    tts_provider.text_to_speech(text, output_folder, audio_tags)
 
-        if config.output_text:
-            text_file = os.path.join(config.output_folder, f"{idx:04d}_{title}.txt")
-            with open(text_file, "w", encoding='utf-8') as file:
-                file.write(text)
+def convert_chapters_concurrently(chapters, config, tts_provider, book_parser):
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # 准备并提交所有任务
+        tasks = []
+        for idx, (title, text) in enumerate(chapters, start=1):
+            if idx < config.chapter_start:
+                continue
+            if idx > config.chapter_end:
+                break
+            print(
+                f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}"
+            )
+            if config.output_text:
+                text_file = os.path.join(config.output_folder, f"{idx:04d}_{title}.txt")
+                with open(text_file, "w", encoding='utf-8') as file:
+                    file.write(text)
+            if config.preview:
+                continue
+            output_file = os.path.join(config.output_folder, f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}")
+            audio_tags = AudioTags(title, book_parser.get_book_author(), book_parser.get_book_title(), idx)
 
-        if config.preview:
-            return
+            task = executor.submit(convert_chapter_to_speech, text, output_file, tts_provider, audio_tags)
+            tasks.append(task)
 
-        output_file = os.path.join(config.output_folder,
-                                   f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}")
-
-        audio_tags = AudioTags(title, book_parser.get_book_author(), book_parser.get_book_title(), idx)
-        tts_provider.text_to_speech(text, output_file, audio_tags)
+        # 等待所有任务完成
+        for task in tasks:
+            task.result()  # 如果需要处理每个任务的结果，可以在这里进行
