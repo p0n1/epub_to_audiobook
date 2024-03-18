@@ -348,6 +348,11 @@ Here are some examples that demonstrate various option combinations:
 
 This may be because the Python version you are using is [less than 3.8](https://stackoverflow.com/questions/73165636/no-module-named-importlib-metadata). You can try to manually install it by `pip3 install importlib-metadata`, or use a higher Python version.
 
+### FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'
+
+Make sure ffmpeg biary is accessible from your path. If you are on a mac and use homebrew, you can do `brew install ffmpeg`, On Ubuntu you can do `sudo apt install ffmpeg`
+
+
 ## Related Projects
 
 - [Epub to Audiobook (M4B)](https://github.com/duplaja/epub-to-audiobook-hf): Epub to MB4 Audiobook, with StyleTTS2 via HuggingFace Spaces API.
