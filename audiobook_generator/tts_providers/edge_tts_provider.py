@@ -108,7 +108,6 @@ class CommWithPauses(Communicate):
             frame_rate=24000,
             channels=1
         )
-        audio.export(audio_fname)
 
 class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
