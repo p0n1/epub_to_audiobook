@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+from glob import glob
 import argparse
 import logging
 
@@ -132,7 +135,27 @@ def handle_args():
 def main():
     config = handle_args()
     logger.setLevel(config.log)
-    AudiobookGenerator(config).run()
+    if os.path.isdir(config.input_file):
+        print("Searching for .epub files...")
+        epub_list = [y for x in os.walk(config.input_file) for y in glob(os.path.join(x[0], '*.epub'))]
+        print(f"Found {len(epub_list)} .epub files.")
+
+        input_folder_root = str(Path(config.input_file))
+        output_folder_base = config.output_folder
+
+        for epub_file in epub_list:
+            epub_path = Path(epub_file)
+            subfolder = str(epub_path.parent).replace(input_folder_root, "")
+            epub_filename = str(epub_path.name)
+            
+            config.input_file = epub_file
+            config.output_folder = os.path.join(output_folder_base.strip("/").strip("\\"), subfolder.strip("/").strip("\\"))
+            print(f"Processing {epub_filename}...")
+            print(config.output_folder)
+            AudiobookGenerator(config).run()
+
+    else:
+        AudiobookGenerator(config).run()
 
 
 if __name__ == "__main__":
