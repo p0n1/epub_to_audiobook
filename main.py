@@ -135,6 +135,7 @@ def handle_args():
 def main():
     config = handle_args()
     logger.setLevel(config.log)
+
     if os.path.isdir(config.input_file):
         print("Searching for .epub files...")
         epub_list = [y for x in os.walk(config.input_file) for y in glob(os.path.join(x[0], '*.epub'))]
@@ -150,8 +151,12 @@ def main():
             
             config.input_file = epub_file
             config.output_folder = os.path.join(output_folder_base.strip("/").strip("\\"), subfolder.strip("/").strip("\\"))
-            print(f"Processing {epub_filename}...")
-            print(config.output_folder)
+
+            if os.path.isdir(config.output_folder):
+                print(f"Skipping the following folder, as it already exists in the output path: {config.output_folder}")
+                continue
+
+            print(f"Processing \"{epub_filename}\" ...")
             AudiobookGenerator(config).run()
 
     else:
