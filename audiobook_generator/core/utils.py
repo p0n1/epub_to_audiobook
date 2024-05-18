@@ -11,13 +11,16 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
     current_chunk = ""
 
     if language.startswith("zh"):  # Chinese
-        for char in text:
-            if len(current_chunk) + 1 <= max_chars or is_special_char(char):
-                current_chunk += char
+        import re
+        # Use regular expression to split the text into sentences based on Chinese punctuation
+        sentences = re.split(r'(?<=[。！？；])(?![”’])', text)
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) <= max_chars:
+                current_chunk += sentence
             else:
-                chunks.append(current_chunk)
-                current_chunk = char
-
+                if current_chunk:
+                    chunks.append(current_chunk)
+                current_chunk = sentence
         if current_chunk:
             chunks.append(current_chunk)
 
