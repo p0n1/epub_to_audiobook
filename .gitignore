@@ -9,6 +9,7 @@ venv/
 .idea
 .history/
 .run/
+.python-version
 
 # Temporary files
 *.tmp

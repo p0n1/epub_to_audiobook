@@ -31,5 +31,9 @@ class GeneralConfig:
         self.voice_pitch = args.voice_pitch
         self.proxy = args.proxy
 
+        # TTS provider: Coqui specific arguments
+        self.voice_sample_wav_path = args.voice_sample_wav_path
+        self.language_coqui = args.language_coqui
+        
     def __str__(self):
         return ', '.join(f"{key}={value}" for key, value in self.__dict__.items())

@@ -6,3 +6,4 @@ requests==2.31.0
 socksio==1.0.0
 edge-tts==6.1.10
 pydub==0.25.1
+TTS==0.22.0

@@ -100,7 +100,7 @@ def handle_args():
         help='''
             Speaking rate of the text. Valid relative values range from -50%%(--xxx='-50%%') to +100%%. 
             For negative value use format --arg=value,
-        '''
+        ''',
     )
 
     edge_tts_group.add_argument(
@@ -108,7 +108,7 @@ def handle_args():
         help='''
             Volume level of the speaking voice. Valid relative values floor to -100%%.
             For negative value use format --arg=value,
-        '''
+        ''',
     )
 
     edge_tts_group.add_argument(
@@ -116,7 +116,7 @@ def handle_args():
         help='''
             Baseline pitch for the text.Valid relative values like -80Hz,+50Hz, pitch changes should be within 0.5 to 1.5 times the original audio.
             For negative value use format --arg=value,
-        '''
+        ''',
     )
 
     edge_tts_group.add_argument(
@@ -129,6 +129,19 @@ def handle_args():
         "--break_duration",
         default="1250",
         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.",
+    )
+
+    coqui_tts_group = parser.add_argument_group(title="coqui specific")
+    coqui_tts_group.add_argument(
+        "--voice_sample_wav_path",
+        default="sample_voices/samples_en_man_1.wav",
+        help="Path to the sample wav file to be used for the voice of the TTS provider",
+    )
+
+    coqui_tts_group.add_argument(
+        "--language_coqui",
+        default="en",
+        help="Language for the text-to-speech service using Coqui provider(default: en). Possible values are ['en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl', 'cs', 'ar', 'zh-cn', 'hu', 'ko', 'ja', 'hi']",
     )
 
     args = parser.parse_args()

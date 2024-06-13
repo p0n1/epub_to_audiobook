@@ -80,7 +80,7 @@ python3 main.py -h
 ```
 
 ```bash
-usage: main.py [-h] [--tts {azure,openai,edge}]
+usage: main.py [-h] [--tts {azure,openai,edge,coqui}]
                [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preview]
                [--no_prompt] [--language LANGUAGE]
                [--newline_mode {single,double}]
@@ -90,6 +90,8 @@ usage: main.py [-h] [--tts {azure,openai,edge}]
                [--voice_rate VOICE_RATE] [--voice_volume VOICE_VOLUME]
                [--voice_pitch VOICE_PITCH] [--proxy PROXY]
                [--break_duration BREAK_DURATION]
+               [--voice_sample_wav_path VOICE_SAMPLE_WAV_PATH]
+               [--language_coqui LANGUAGE_COQUI]
                input_file output_folder
 
 Convert text book to audiobook
@@ -100,7 +102,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --tts {azure,openai,edge}
+  --tts {azure,openai,edge,coqui}
                         Choose TTS provider (default: azure). azure: Azure
                         Cognitive Services, openai: OpenAI TTS API. When using
                         azure, environment variables MS_TTS_KEY and
@@ -175,6 +177,16 @@ azure specific:
                         Break duration in milliseconds for the different
                         paragraphs or sections (default: 1250). Valid values
                         range from 0 to 5000 milliseconds.
+
+coqui specific:
+  --voice_sample_wav_path VOICE_SAMPLE_WAV_PATH
+                        Path to the sample wav file to be used for the voice
+                        of the TTS provider
+  --language_coqui LANGUAGE_COQUI
+                        Language for the text-to-speech service using Coqui
+                        provider(default: en). Possible values are ['en',
+                        'es', 'fr', 'de', 'it', 'pt', 'pl', 'tr', 'ru', 'nl',
+                        'cs', 'ar', 'zh-cn', 'hu', 'ko', 'ja', 'hi']
 ```  
 
 **Example**:
@@ -342,6 +354,28 @@ Here are some examples that demonstrate various option combinations:
    python3 main.py "path/to/book.epub" "path/to/output/folder" --tts edge --chapter_start 5 --chapter_end 10 --break_duration "1500"
    ```
 
+### Examples Using Coqui TTS
+
+1. **Basic conversion using Coqui with default settings**  
+   This command will convert an EPUB file to an audiobook using Coqui's default TTS settings.
+
+   ```sh
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts coqui
+   ```
+
+2. **Coqui conversion with xtts v2 voice clone in en language**  
+   Converts an EPUB file to an audiobook using the xtts v2 voice clone in English language.
+
+   ```sh
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts coqui --model_name tts_models/multilingual/multi-dataset/xtts_v2 --language_coqui "en"
+   ```
+
+3. **Coqui conversion with xtts v2 voice clone and custom voice in en language**
+
+   ```sh
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts coqui --model_name tts_models/multilingual/multi-dataset/xtts_v2 --voice_sample_wav_path "path/to/sample.wav" --language_coqui "en"
+   ```
+
 ## Troubleshooting
 
 ### ModuleNotFoundError: No module named 'importlib_metadata'
@@ -351,7 +385,6 @@ This may be because the Python version you are using is [less than 3.8](https://
 ### FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'
 
 Make sure ffmpeg biary is accessible from your path. If you are on a mac and use homebrew, you can do `brew install ffmpeg`, On Ubuntu you can do `sudo apt install ffmpeg`
-
 
 ## Related Projects
 
