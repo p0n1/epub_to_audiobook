@@ -51,6 +51,12 @@ def handle_args():
         help="Choose the mode of detecting new paragraphs: 'single' or 'double'. 'single' means a single newline character, while 'double' means two consecutive newline characters. (default: double, works for most ebooks but will detect less paragraphs for some ebooks)",
     )
     parser.add_argument(
+        "--title_mode",
+        choices=["auto", "tag_text", "first_few"],
+        default="auto",
+        help="Choose the parse mode for chapter title, 'tag_text' search 'title','h1','h2','h3' tag for title, 'first_few' set first 60 characters as title, 'auto' auto apply the best mode for current chapter.",
+    )
+    parser.add_argument(
         "--chapter_start",
         default=1,
         type=int,
