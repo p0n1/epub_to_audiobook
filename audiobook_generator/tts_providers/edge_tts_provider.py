@@ -14,9 +14,6 @@ from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 logger = logging.getLogger(__name__)
 
-MAX_RETRIES = 12  # Max_retries constant for network errors
-
-
 async def get_supported_voices():
     # List all available voices and their attributes.
     # This pulls data from the URL used by Microsoft Edge to return a list of
@@ -33,6 +30,9 @@ async def get_supported_voices():
        
     return result
 
+
+# Credit: https://gist.github.com/moha-abdi/8ddbcb206c38f592c65ada1e5479f2bf
+# @phuchoang2603 contributed pause support in https://github.com/p0n1/epub_to_audiobook/pull/45
 class CommWithPauses(Communicate):
     # This class uses edge_tts to generate text
     # but with pauses for example:- text: 'Hello
@@ -48,22 +48,30 @@ class CommWithPauses(Communicate):
         self.file = io.BytesIO()
 
     def parse_text(self):
+        logger.debug(f"Parsing the text, looking for pauses in text: {self.text}")
         if not "[pause:" in self.text:
-            return [(0, self.text)]
+            logger.debug(f"No pauses found in the text")
+            yield 0, self.text
         
         parts = self.text.split("[pause:")
+        logger.debug(f"split into parts: {parts}")
         for part in parts:
             if "]" in part:
                 pause_time, content = part.split("]", 1)
+                logger.debug(f"Pause time: {pause_time}, Content: {content.strip()}")
                 yield int(pause_time), content.strip()
 
             else:
                 content = part
+                logger.debug(f"No pause time, Content: {content.strip()}")
                 yield 0, content.strip()
 
     async def chunkify(self):
+        logger.debug(f"Chunkifying the text")
         for pause_time, content in self.parsed:
-            if pause_time:
+            logger.debug(f"pause_time: {pause_time}")
+            logger.debug(f"content: {content}")
+            if pause_time > 0:
                 pause_bytes = self.generate_pause(pause_time)
                 self.file.write(pause_bytes)
 
@@ -77,6 +85,7 @@ class CommWithPauses(Communicate):
         return silent.raw_data
 
     async def generate_audio(self, text: str) -> bytes:
+        logger.debug(f"Generating audio for: {text}")
         # this genertes the real TTS using edge_tts for this part.
         temp_chunk = io.BytesIO()
         self.text = text
@@ -87,8 +96,10 @@ class CommWithPauses(Communicate):
         temp_chunk.seek(0)
         # handle the case where the chunk is empty
         try:
+            logger.debug(f"Decoding the chunk")
             decoded_chunk = AudioSegment.from_mp3(temp_chunk)
         except:
+            logger.debug(f"Empty chunk")
             decoded_chunk = AudioSegment.silent(0, 24000)
         return decoded_chunk.raw_data
 
@@ -139,11 +150,14 @@ class EdgeTTSProvider(BaseTTSProvider):
             output_file: str,
             audio_tags: AudioTags,
     ):
+        
         # Replace break string with pause tag
         text = text.replace(
             self.get_break_string().strip(),
             f"[pause: {self.config.break_duration}]"
         )
+
+        logger.debug(f"Text to speech, adding pause mark: {text}")
 
         communicate = CommWithPauses(
             text=text,
