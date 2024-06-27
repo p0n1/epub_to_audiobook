@@ -110,12 +110,12 @@ class CommWithPauses(Communicate):
     ) -> None:
         # Save the audio and metadata to the specified files.
         await self.chunkify()
-        await super().save(audio_fname, metadata_fname)
 
         self.file.seek(0)
         audio: AudioSegment = AudioSegment.from_raw(
             self.file, sample_width=2, frame_rate=24000, channels=1
         )
+        logger.debug(f"Exporting the audio")
         audio.export(audio_fname)
         logger.info(f"Saved the audio to: {audio_fname}")
 
