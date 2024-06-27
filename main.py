@@ -124,11 +124,11 @@ def handle_args():
         help="Proxy server for the TTS provider. Format: http://[username:password@]proxy.server:port",
     )
 
-    azure_tts_group = parser.add_argument_group(title="azure specific")
-    azure_tts_group.add_argument(
+    azure_edge_tts_group = parser.add_argument_group(title="azure/edge specific")
+    azure_edge_tts_group.add_argument(
         "--break_duration",
         default="1250",
-        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250). Valid values range from 0 to 5000 milliseconds.",
+        help="Break duration in milliseconds for the different paragraphs or sections (default: 1250, means 1.25 s). Valid values range from 0 to 5000 milliseconds for Azure TTS.",
     )
 
     args = parser.parse_args()

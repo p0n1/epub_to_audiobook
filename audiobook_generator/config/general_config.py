@@ -22,7 +22,7 @@ class GeneralConfig:
         self.output_format = args.output_format
         self.model_name = args.model_name
 
-        # TTS provider: Azure specific arguments
+        # TTS provider: Azure & Edge TTS specific arguments
         self.break_duration = args.break_duration
 
         # TTS provider: Edge specific arguments
