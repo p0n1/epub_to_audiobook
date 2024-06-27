@@ -69,7 +69,7 @@ class CommWithPauses(Communicate):
         for content in self.parsed:
             audio_bytes = await self.generate_audio(content)
             self.file.write(audio_bytes)
-            if content != self.parsed[-1]:
+            if content != self.parsed[-1] and self.break_duration > 0:
                 # only same break duration for all breaks is supported now
                 pause_bytes = self.generate_pause(self.break_duration)
                 self.file.write(pause_bytes)
