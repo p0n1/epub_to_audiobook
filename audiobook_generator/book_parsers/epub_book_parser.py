@@ -16,7 +16,7 @@ class EpubBookParser(BaseBookParser):
     def __init__(self, config: GeneralConfig):
         super().__init__(config)
         logger.setLevel(config.log)
-        self.book = epub.read_epub(self.config.input_file)
+        self.book = epub.read_epub(self.config.input_file, {"ignore_ncx": True})
 
     def __str__(self) -> str:
         return super().__str__()
@@ -44,7 +44,7 @@ class EpubBookParser(BaseBookParser):
         chapters = []
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
-            soup = BeautifulSoup(content, "lxml")
+            soup = BeautifulSoup(content, "lxml-xml")
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
