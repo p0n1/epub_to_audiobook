@@ -141,8 +141,10 @@ class EdgeTTSProvider(BaseTTSProvider):
     def __str__(self) -> str:
         return f"{self.config}"
 
-    async def validate_config(self):
-        if self.config.voice_name not in await get_supported_voices():
+    def validate_config(self):
+        supported_voices = asyncio.run(get_supported_voices())
+        # logger.debug(f"Supported voices: {supported_voices}")
+        if self.config.voice_name not in supported_voices:
             raise ValueError(
                 f"EdgeTTS: Unsupported voice name: {self.config.voice_name}"
             )
