@@ -7,6 +7,9 @@ WORKDIR /app_src
 # Add current directory code to docker
 ADD . /app_src
 
+# Install ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg
+
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
