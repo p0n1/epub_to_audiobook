@@ -83,7 +83,8 @@ python3 main.py -h
 usage: main.py [-h] [--tts {azure,openai,edge}]
                [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preview]
                [--no_prompt] [--language LANGUAGE]
-               [--newline_mode {single,double}]
+               [--newline_mode {single,double,none}]
+               [--title_mode {auto,tag_text,first_few}]
                [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
                [--output_text] [--remove_endnotes] [--voice_name VOICE_NAME]
                [--output_format OUTPUT_FORMAT] [--model_name MODEL_NAME]
@@ -126,13 +127,20 @@ options:
                         different strategies in this tool, especially for
                         Chinese characters. For Chinese books, use zh-CN, zh-
                         TW, or zh-HK.
-  --newline_mode {single,double}
-                        Choose the mode of detecting new paragraphs: 'single'
-                        or 'double'. 'single' means a single newline
+  --newline_mode {single,double,none}
+                        Choose the mode of detecting new paragraphs: 'single',
+                        'double', or 'none'. 'single' means a single newline
                         character, while 'double' means two consecutive
-                        newline characters. (default: double, works for most
+                        newline characters. 'none' means all newline
+                        characters will be replace with blank so paragraphs
+                        will not be detected. (default: double, works for most
                         ebooks but will detect less paragraphs for some
                         ebooks)
+  --title_mode {auto,tag_text,first_few}
+                        Choose the parse mode for chapter title, 'tag_text'
+                        search 'title','h1','h2','h3' tag for title,
+                        'first_few' set first 60 characters as title, 'auto'
+                        auto apply the best mode for current chapter.
   --chapter_start CHAPTER_START
                         Chapter start index (default: 1, starting from 1)
   --chapter_end CHAPTER_END
@@ -170,11 +178,12 @@ edge specific:
   --proxy PROXY         Proxy server for the TTS provider. Format:
                         http://[username:password@]proxy.server:port
 
-azure specific:
+azure/edge specific:
   --break_duration BREAK_DURATION
                         Break duration in milliseconds for the different
-                        paragraphs or sections (default: 1250). Valid values
-                        range from 0 to 5000 milliseconds.
+                        paragraphs or sections (default: 1250, means 1.25 s).
+                        Valid values range from 0 to 5000 milliseconds for
+                        Azure TTS.
 ```  
 
 **Example**:
@@ -249,7 +258,7 @@ Check https://platform.openai.com/docs/quickstart/account-setup. Make sure you c
 
 Edge TTS and Azure TTS are almost same, the difference is that Edge TTS don't require API Key because it's based on Edge read aloud functionality, and parameters are restricted a bit, like [custom ssml](https://github.com/rany2/edge-tts#custom-ssml).
 
-Check https://github.com/p0n1/epub_to_audiobook/blob/main/audiobook_generator/tts_providers/edge_tts_provider.py#L17 for supported voices.
+Check https://gist.github.com/BettyJJ/17cbaa1de96235a7f5773b8690a20462 for supported voices.
 
 **If you want to try this project quickly, Edge TTS is highly recommended.**
 

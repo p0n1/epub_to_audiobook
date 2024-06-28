@@ -103,6 +103,11 @@ class AudiobookGenerator:
                     output_file,
                     audio_tags,
                 )
+                logger.info(
+                    f"✅ Converted chapter {idx}/{len(chapters)}: {title}"
+                )
+            logger.info(f"All chapters converted. 🎉🎉🎉")
+
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
             exit()

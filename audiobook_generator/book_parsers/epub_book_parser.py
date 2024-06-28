@@ -53,6 +53,8 @@ class EpubBookParser(BaseBookParser):
                 cleaned_text = re.sub(r"[\n]+", break_string, raw.strip())
             elif self.config.newline_mode == "double":
                 cleaned_text = re.sub(r"[\n]{2,}", break_string, raw.strip())
+            elif self.config.newline_mode == "none":
+                cleaned_text = re.sub(r"[\n]+", " ", raw.strip())
             else:
                 raise ValueError(f"Invalid newline mode: {self.config.newline_mode}")
 
