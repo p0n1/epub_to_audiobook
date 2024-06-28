@@ -22,7 +22,7 @@ def get_supported_voices():
 
 
 def get_supported_formats():
-    return ["mp3", "acc", "flac", "opus"]
+    return ["mp3", "aac", "flac", "opus"]
 
 
 class OpenAITTSProvider(BaseTTSProvider):
