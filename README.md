@@ -80,7 +80,7 @@ python3 main.py -h
 ```
 
 ```bash
-usage: main.py [-h] [--tts {azure,openai,edge}]
+usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--log {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--preview]
                [--no_prompt] [--language LANGUAGE]
                [--newline_mode {single,double,none}]
@@ -101,7 +101,7 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --tts {azure,openai,edge}
+  --tts {azure,openai,edge,piper}
                         Choose TTS provider (default: azure). azure: Azure
                         Cognitive Services, openai: OpenAI TTS API. When using
                         azure, environment variables MS_TTS_KEY and
