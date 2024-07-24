@@ -22,7 +22,17 @@ class PiperTTSProvider(BaseTTSProvider):
 
         # TTS provider specific config
         config.output_format = config.output_format or "opus"
-        config.voice_rate = config.voice_rate or "1.0"
+
+        if config.voice_rate is None:
+            config.voice_rate = 1.0
+        else:
+            try:
+                config.voice_rate = float(config.voice_rate)
+            except ValueError:
+                logger.error("Invalid voice_rate %r", config.voice_rate)
+                config.voice_rate = 1.0
+        config.voice_name = config.voice_name or "0"
+        config.break_duration = config.break_duration or 0.2
 
         # 0.000$ per 1 million characters
         # or 0.000$ per 1000 characters
@@ -48,7 +58,19 @@ class PiperTTSProvider(BaseTTSProvider):
             tmpfilename = Path(tmpdirname) / "piper.wav"
 
             run(
-                ["piper-tts", "--model", self.config.voice_name, "-f", tmpfilename],
+                [
+                    "piper-tts",
+                    "--model",
+                    self.config.model_name,
+                    "--speaker",
+                    self.config.voice_name,
+                    "--sentence_silence",
+                    str(self.config.break_duration),
+                    "--length_scale",
+                    str(1.0 / self.config.voice_rate),
+                    "-f",
+                    tmpfilename,
+                ],
                 input=text.encode("utf-8"),
             )
 
