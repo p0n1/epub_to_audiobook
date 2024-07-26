@@ -359,7 +359,7 @@ This may be because the Python version you are using is [less than 3.8](https://
 
 ### FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'
 
-Make sure ffmpeg biary is accessible from your path. If you are on a mac and use homebrew, you can do `brew install ffmpeg`, On Ubuntu you can do `sudo apt install ffmpeg`
+Make sure ffmpeg binary is accessible from your path. If you are on a mac and use homebrew, you can do `brew install ffmpeg`, On Ubuntu you can do `sudo apt install ffmpeg`
 
 
 ## Related Projects
