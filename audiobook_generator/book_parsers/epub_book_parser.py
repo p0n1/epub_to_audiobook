@@ -42,6 +42,7 @@ class EpubBookParser(BaseBookParser):
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []
+        search_and_replaces = self.get_search_and_replaces()
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")
@@ -66,6 +67,11 @@ class EpubBookParser(BaseBookParser):
             if self.config.remove_endnotes:
                 cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
                 logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
+
+            # Does user defined search and replaces
+            for search_and_replace in search_and_replaces:
+                cleaned_text = re.sub(search_and_replace['search'], search_and_replace['replace'], cleaned_text)
+            logger.debug(f"Cleaned text step 5: <{cleaned_text[:100]}>")
 
             # Get proper chapter title
             if self.config.title_mode == "auto":
@@ -97,6 +103,16 @@ class EpubBookParser(BaseBookParser):
             chapters.append((title, cleaned_text))
             soup.decompose()
         return chapters
+
+    def get_search_and_replaces(self):
+        search_and_replaces = []
+        if self.config.search_and_replace_file:
+            with open(self.config.search_and_replace_file) as fp:
+                search_and_replace_content = fp.readlines()
+                for search_and_replace in search_and_replace_content:
+                    if '==' in search_and_replace and not search_and_replace.startswith('==') and not search_and_replace.endswith('==') and not search_and_replace.startswith('#'):
+                        search_and_replaces = search_and_replaces + [ {'search': r"{}".format(search_and_replace.split('==')[0]), 'replace': r"{}".format(search_and_replace.split('==')[1][:-1])} ]
+        return search_and_replaces
 
     @staticmethod
     def _sanitize_title(title, break_string) -> str:

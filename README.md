@@ -152,6 +152,12 @@ options:
   --remove_endnotes     This will remove endnote numbers from the end or
                         middle of sentences. This is useful for academic
                         books.
+  --search_and_replace_file SEARCH_AND_REPLACE_FILE
+                        Path to a file that contains 1 regex replace per line,
+                        to help with fixing pronunciations, etc. The format is:
+                        <search>==<replace>
+                        Note that you may have to specify word boundaries, to
+                        avoid replacing parts of words.
   --voice_name VOICE_NAME
                         Various TTS providers has different voice names, look
                         up for your provider settings.
@@ -197,6 +203,36 @@ Executing the above command will generate a directory named `output_folder` and 
 ## Preview Mode
 
 Before converting your epub file to an audiobook, you can use the `--preview` option to get a summary of each chapter. This will provide you with the character count of each chapter and the total count, instead of converting the text to speech.
+
+**Example**:
+
+```bash
+python3 main.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder --preview
+```
+
+## Search & Replace
+
+You may want to search and replace text, either to expand abbreviations, or to help with pronunciation. You can do this by specifying a search and replace file, which contains a single regex search and replace per line, separated by '==':
+
+**Example**:
+
+**search.conf**:
+
+```text
+# this is the general structure
+<search>==<replace>
+# this is a comment
+# fix cardinal direction abbreviations
+N\.E\.==north east
+# be careful with your regexes, as this would also match Sally N. Smith
+N\.==north
+# pronounce Barbadoes like the locals
+Barbadoes==Barbayduss
+```
+
+```bash
+python3 main.py examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub output_folder --search_and_replace_file search.conf
+```
 
 **Example**:
 

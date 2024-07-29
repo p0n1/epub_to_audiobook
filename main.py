@@ -82,6 +82,15 @@ def handle_args():
     )
 
     parser.add_argument(
+        "--search_and_replace_file",
+        default="",
+        help="""Path to a file that contains 1 regex replace per line, to help with fixing pronunciations, etc. The format is:
+        <search>==<replace>
+        Note that you may have to specify word boundaries, to avoid replacing parts of words.
+        """,
+    )
+
+    parser.add_argument(
         "--voice_name",
         help="Various TTS providers has different voice names, look up for your provider settings.",
     )
