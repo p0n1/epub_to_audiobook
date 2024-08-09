@@ -42,6 +42,10 @@ class EpubBookParser(BaseBookParser):
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []
+        items = []
+        for itemtype in self.config.item_types:
+            items.extend(self.book.get_items_of_type(getattr(ebooklib, f"ITEM_{itemtype}")))
+        items = self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT)
         for item in self.book.get_items_of_type(ebooklib.ITEM_UNKNOWN):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")

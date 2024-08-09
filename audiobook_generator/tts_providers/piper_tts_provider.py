@@ -1,11 +1,11 @@
-import io
 import logging
 import math
+from pathlib import Path
 import subprocess
 
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.config.general_config import GeneralConfig
-from audiobook_generator.core.utils import split_text, set_audio_tags
+from audiobook_generator.core.utils import set_audio_tags
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 
@@ -13,15 +13,19 @@ logger = logging.getLogger(__name__)
 
 
 def get_supported_models():
-    return ["tts-1", "tts-1-hd"]
+    return []
 
 
 def get_supported_voices():
-    return ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    # really, whatever is in the configured "piper_voice_folder"
+    # note, you may have to name the onnx and onnx.json files to
+    # match what is expected below
+    return []
 
 
 def get_supported_formats():
-    return ["mp3", "aac", "flac", "opus"]
+    # piper only supports output as a wav
+    return ["wav"]
 
 
 class PiperTTSProvider(BaseTTSProvider):
@@ -29,7 +33,7 @@ class PiperTTSProvider(BaseTTSProvider):
         logger.setLevel(config.log)
         config.model_name = config.model_name or "joe"
         config.voice_name = config.voice_name or "joe"
-        config.output_format = config.output_format or "mp3"
+        config.output_format = config.output_format or "wav"
         self.price = 0.00
         super().__init__(config)
 
@@ -42,18 +46,21 @@ class PiperTTSProvider(BaseTTSProvider):
         )
         logger.debug(f"Text: [{text}]")
 
+        lang_underscore = self.config.language.replace("-", "_")
+        voice_folder = Path(self.config.piper_voice_folder)
+        model_path = voice_folder / f"{lang_underscore}-{self.config.voice_name}-{self.config.piper_quality}.onnx"
+        config_path = voice_folder / f"{lang_underscore}_{self.config.voice_name}_{self.config.piper_quality}_{lang_underscore}-{self.config.voice_name}-{self.config.piper_quality}.onnx.json"
         cmd = [
-            "/opt/local/piper/piper/piper",
-            "-m", "/opt/local/piper/en_US-joe-medium.onnx",
-            "-c", "/opt/local/piper/en_en_US_joe_medium_en_US-joe-medium.onnx.json",
+            self.config.path_to_piper,
+            "-m", f"{model_path}",
+            "-c", f"{config_path}",
             "-f", output_file,
-            "--length_scale", "1.2",
-            "--sentence_silence", "0.4",
+            "--length_scale", self.config.piper_length_scale,
+            "--sentence_silence", self.config.piper_sentence_silence,
         ]
         logger.info(" ".join(cmd))
         results = subprocess.run(
             " ".join(cmd),
-            cwd="/opt/local",
             input=text.encode("utf-8"),
             shell=True,
             capture_output=True)

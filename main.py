@@ -59,6 +59,12 @@ def handle_args():
         help="Choose the parse mode for chapter title, 'tag_text' search 'title','h1','h2','h3' tag for title, 'first_few' set first 60 characters as title, 'auto' auto apply the best mode for current chapter.",
     )
     parser.add_argument(
+        "--item-type",
+        choices=["UNKNOWN", "IMAGE", "STYLE", "SCRIPT", "NAVIGATION", "VECTOR", "FONT", "VIDEO", "AUDIO", "DOCUMENT", "COVER", "SMIL"],
+        nargs="*",
+        default="DOCUMENT",
+        help="epub item types to include in audio conversion")
+    parser.add_argument(
         "--chapter_start",
         default=1,
         type=int,
@@ -132,6 +138,32 @@ def handle_args():
         default="1250",
         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250, means 1.25 s). Valid values range from 0 to 5000 milliseconds for Azure TTS.",
     )
+
+    piper_tts_group = parser.add_argument_group(title="piper specific")
+    piper_tts_group.add_argument(
+        "--path-to-piper",
+        default="/usr/local/bin/piper",
+        help="Path to the 'piper' executable")
+    piper_tts_group.add_argument(
+        "--piper-voice-folder",
+        default="/usr/local/share/piper/",
+        help="Path to folder containing onnx and onnx.json files for piper voices")
+    piper_tts_group.add_argument(
+        "--piper-length-scale",
+        default="1.0",
+        help="Length scale to apply to voice")
+    piper_tts_group.add_argument(
+        "--piper-sentence-silence",
+        default="0.2",
+        help="Sentence silence to apply to voice")
+    piper_tts_group.add_argument(
+        "--piper-quality",
+        default="medium",
+        help="quality of piper voice to select")
+    piper_tts_group.add_argument(
+        "--piper-lang",
+        default="medium",
+        help="quality of piper voice to select")
 
     args = parser.parse_args()
     return GeneralConfig(args)

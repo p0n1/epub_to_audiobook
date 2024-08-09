@@ -8,6 +8,7 @@ class GeneralConfig:
         self.log = args.log
         self.no_prompt = args.no_prompt
         self.title_mode = args.title_mode
+        self.item_types = args.item_type
 
         # Book parser specific arguments
         self.newline_mode = args.newline_mode
@@ -30,6 +31,13 @@ class GeneralConfig:
         self.voice_volume = args.voice_volume
         self.voice_pitch = args.voice_pitch
         self.proxy = args.proxy
+
+        # TTS provider: Piper specific arguments
+        self.path_to_piper = args.path_to_piper
+        self.piper_voice_folder = args.piper_voice_folder
+        self.piper_length_scale = args.piper_length_scale
+        self.piper_sentence_silence = args.piper_sentence_silence
+        self.piper_quality = args.piper_quality
 
     def __str__(self):
         return ', '.join(f"{key}={value}" for key, value in self.__dict__.items())
