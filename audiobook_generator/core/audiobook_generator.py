@@ -63,8 +63,8 @@ class AudiobookGenerator:
             logger.info(f"Converting chapters from {self.config.chapter_start} to {self.config.chapter_end}.")
 
             # Initialize total_characters to 0
-            total_characters = get_total_chars(chapters)
-            logger.info(f"✨ Total characters in selected book: {total_characters} ✨")
+            total_characters = get_total_chars(chapters[self.config.chapter_start - 1:self.config.chapter_end])
+            logger.info(f"✨ Total characters in selected book chapters: {total_characters} ✨")
             rough_price = tts_provider.estimate_cost(total_characters)
             print(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
 
