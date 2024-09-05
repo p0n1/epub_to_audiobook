@@ -32,5 +32,11 @@ class GeneralConfig:
         self.voice_pitch = args.voice_pitch
         self.proxy = args.proxy
 
+        # TTS provider: Piper specific arguments
+        self.piper_path = args.piper_path
+        self.piper_speaker = args.piper_speaker
+        self.piper_sentence_silence = args.piper_sentence_silence
+        self.piper_length_scale = args.piper_length_scale
+
     def __str__(self):
         return ', '.join(f"{key}={value}" for key, value in self.__dict__.items())

@@ -124,7 +124,6 @@ class CommWithPauses:
 
 class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        logger.setLevel(config.log)
         # TTS provider specific config
         config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
