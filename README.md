@@ -88,11 +88,15 @@ usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--newline_mode {single,double,none}]
                [--title_mode {auto,tag_text,first_few}]
                [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
-               [--output_text] [--remove_endnotes] [--voice_name VOICE_NAME]
-               [--output_format OUTPUT_FORMAT] [--model_name MODEL_NAME]
-               [--voice_rate VOICE_RATE] [--voice_volume VOICE_VOLUME]
-               [--voice_pitch VOICE_PITCH] [--proxy PROXY]
-               [--break_duration BREAK_DURATION]
+               [--output_text] [--remove_endnotes]
+               [--search_and_replace_file SEARCH_AND_REPLACE_FILE]
+               [--voice_name VOICE_NAME] [--output_format OUTPUT_FORMAT]
+               [--model_name MODEL_NAME] [--voice_rate VOICE_RATE]
+               [--voice_volume VOICE_VOLUME] [--voice_pitch VOICE_PITCH]
+               [--proxy PROXY] [--break_duration BREAK_DURATION]
+               [--piper_path PIPER_PATH] [--piper_speaker PIPER_SPEAKER]
+               [--piper_sentence_silence PIPER_SENTENCE_SILENCE]
+               [--piper_length_scale PIPER_LENGTH_SCALE]
                input_file output_folder
 
 Convert text book to audiobook
@@ -156,10 +160,10 @@ options:
                         books.
   --search_and_replace_file SEARCH_AND_REPLACE_FILE
                         Path to a file that contains 1 regex replace per line,
-                        to help with fixing pronunciations, etc. The format is:
-                        <search>==<replace>
-                        Note that you may have to specify word boundaries, to
-                        avoid replacing parts of words.
+                        to help with fixing pronunciations, etc. The format
+                        is: <search>==<replace> Note that you may have to
+                        specify word boundaries, to avoid replacing parts of
+                        words.
   --voice_name VOICE_NAME
                         Various TTS providers has different voice names, look
                         up for your provider settings.
@@ -192,6 +196,16 @@ azure/edge specific:
                         paragraphs or sections (default: 1250, means 1.25 s).
                         Valid values range from 0 to 5000 milliseconds for
                         Azure TTS.
+
+piper specific:
+  --piper_path PIPER_PATH
+                        Path to the Piper TTS executable
+  --piper_speaker PIPER_SPEAKER
+                        Piper speaker id, used for multi-speaker models
+  --piper_sentence_silence PIPER_SENTENCE_SILENCE
+                        Seconds of silence after each sentence
+  --piper_length_scale PIPER_LENGTH_SCALE
+                        Phoneme length, a.k.a. speaking rate
 ```  
 
 **Example**:
@@ -400,6 +414,12 @@ You always need to specify an onnx model file and the `piper` executable needs t
 python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx
 ```
 
+You can specify your custom path to the piper executable by using the `--piper_path` parameter.
+
+```sh
+python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --piper_path <path_to>/piper
+```
+
 Some models support multiple voices and that can be specified by using the voice_name parameter.
 
 ```sh
@@ -431,6 +451,8 @@ Make sure ffmpeg binary is accessible from your path. If you are on a mac and us
 ### Piper TTS
 
 For installation-related issues, please refer to the [Piper TTS](https://github.com/rhasspy/piper) repository. It's important to note that if you're installing `piper-tts` via pip, [only Python 3.10](https://github.com/rhasspy/piper/issues/509) is currently supported. Mac users may encounter additional challenges when using the downloaded [binary](https://github.com/rhasspy/piper/issues/523). For more information on Mac-specific issues, please check [this issue](https://github.com/rhasspy/piper/issues/395) and [this pull request](https://github.com/rhasspy/piper/pull/412).
+
+Also check [this](https://github.com/p0n1/epub_to_audiobook/issues/85) if you're having trouble with Piper TTS.
 
 ## Related Projects
 
