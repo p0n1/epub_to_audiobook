@@ -7,13 +7,6 @@ from audiobook_generator.tts_providers.base_tts_provider import (
     get_supported_tts_providers,
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
-
 
 def handle_args():
     parser = argparse.ArgumentParser(description="Convert text book to audiobook")
@@ -142,13 +135,53 @@ def handle_args():
         help="Break duration in milliseconds for the different paragraphs or sections (default: 1250, means 1.25 s). Valid values range from 0 to 5000 milliseconds for Azure TTS.",
     )
 
+    piper_tts_group = parser.add_argument_group(title="piper specific")
+    piper_tts_group.add_argument(
+        "--piper_path",
+        default="piper",
+        help="Path to the Piper TTS executable",
+    )
+    piper_tts_group.add_argument(
+        "--piper_speaker",
+        default=0,
+        help="Piper speaker id, used for multi-speaker models",
+    )
+    piper_tts_group.add_argument(
+        "--piper_sentence_silence",
+        default=0.2,
+        help="Seconds of silence after each sentence",
+    )
+    piper_tts_group.add_argument(
+        "--piper_length_scale",
+        default=1.0,
+        help="Phoneme length, a.k.a. speaking rate",
+    )
+
     args = parser.parse_args()
     return GeneralConfig(args)
 
 
+def setup_logging(log_level):
+    # Create a custom formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
+    )
+
+    # Create a stream handler (prints to console)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    # Configure the root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.addHandler(console_handler)
+
+
 def main():
     config = handle_args()
-    logger.setLevel(config.log)
+
+    setup_logging(config.log)
+
     AudiobookGenerator(config).run()
 
 

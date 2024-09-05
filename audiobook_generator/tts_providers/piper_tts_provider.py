@@ -3,7 +3,6 @@ from subprocess import run
 from pathlib import Path
 import logging
 
-
 from pydub import AudioSegment
 
 from audiobook_generator.config.general_config import GeneralConfig
@@ -18,24 +17,10 @@ __all__ = ["PiperTTSProvider"]
 
 class PiperTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        logger.setLevel(config.log)
 
         # TTS provider specific config
-        config.output_format = config.output_format or "opus"
+        config.output_format = config.output_format or "mp3"
 
-        if config.voice_rate is None:
-            config.voice_rate = 1.0
-        else:
-            try:
-                config.voice_rate = float(config.voice_rate)
-            except ValueError:
-                logger.error("Invalid voice_rate %r", config.voice_rate)
-                config.voice_rate = 1.0
-        config.voice_name = config.voice_name or "0"
-        config.break_duration = config.break_duration or 0.2
-
-        # 0.000$ per 1 million characters
-        # or 0.000$ per 1000 characters
         self.price = 0.000
         super().__init__(config)
 
@@ -57,21 +42,34 @@ class PiperTTSProvider(BaseTTSProvider):
 
             tmpfilename = Path(tmpdirname) / "piper.wav"
 
+            cmd = [
+                self.config.piper_path,
+                "--model",
+                self.config.model_name,
+                "--speaker",
+                str(self.config.piper_speaker),
+                "--sentence_silence",
+                str(self.config.piper_sentence_silence),
+                "--length_scale",
+                str(self.config.piper_length_scale),
+                "-f",
+                tmpfilename,
+                "--debug",
+            ]
+
+            logger.info(
+                f"Running Piper TTS command: {' '.join(str(arg) for arg in cmd)}"
+            )
             run(
-                [
-                    "piper-tts",
-                    "--model",
-                    self.config.model_name,
-                    "--speaker",
-                    self.config.voice_name,
-                    "--sentence_silence",
-                    str(self.config.break_duration),
-                    "--length_scale",
-                    str(1.0 / self.config.voice_rate),
-                    "-f",
-                    tmpfilename,
-                ],
+                cmd,
                 input=text.encode("utf-8"),
+            )
+
+            # set audio tags, need to be done before conversion or opus won't work, not sure why
+            set_audio_tags(tmpfilename, audio_tags)
+
+            logger.info(
+                f"Piper TTS command completed, converting {tmpfilename} to {self.config.output_format} format"
             )
 
             # Convert the wav file to the desired format
@@ -79,7 +77,7 @@ class PiperTTSProvider(BaseTTSProvider):
                 output_file, format=self.config.output_format
             )
 
-        set_audio_tags(output_file, audio_tags)
+            logger.info(f"Conversion completed, output file: {output_file}")
 
     def estimate_cost(self, total_chars):
         return 0

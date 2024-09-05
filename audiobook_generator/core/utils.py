@@ -49,7 +49,7 @@ def set_audio_tags(output_file, audio_tags):
     try:
         try:
             tags = ID3(output_file)
-            print(tags)
+            logger.debug(f"tags: {tags}")
         except ID3NoHeaderError:
             logger.debug(f"handling ID3NoHeaderError: {output_file}")
             tags = ID3()

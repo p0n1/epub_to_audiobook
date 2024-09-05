@@ -390,27 +390,33 @@ Here are some examples that demonstrate various option combinations:
    ```
 
 ### Examples Using Piper TTS
-   This command will convert an EPUB file to an audiobook using Piper TTS using the bare minimum parameters.
-   You always need to specify an onnx model file and the `piper-tts` executable needs to be in the current path. 
 
-   ```sh
-   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx
-   ```
+*Make sure you have installed Piper TTS and have an onnx model file and corresponding config file. Check [Piper TTS](https://github.com/rhasspy/piper) for more details. You can follow their instructions to install Piper TTS, download the models and config files, play with it and then come back to try the examples below.*
 
-   Some models support multiple voices and that can be specified by using the voice_name parameter.
+This command will convert an EPUB file to an audiobook using Piper TTS using the bare minimum parameters.
+You always need to specify an onnx model file and the `piper` executable needs to be in the current $PATH. 
 
-   ```sh
-   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --voice_name 256
-   ```
+```sh
+python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx
+```
 
-   You can also specify speed and pause duration
+Some models support multiple voices and that can be specified by using the voice_name parameter.
 
-   ```sh
-   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --voice_name 256 --voice_rate 1.5 --break_duration 0.75
-   ```
+```sh
+python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --piper_speaker 256
+```
 
-   Piper TTS outputs `wav` format files (or raw) by default you should be able to specify any reasonable format via the `--output_format` parameter.
-   `opus` and `mp3` are good choices for size and compatibility.
+You can also specify speed (piper_length_scale) and pause duration (piper_sentence_silence).
+
+```sh
+python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --piper_speaker 256 --piper_length_scale 1.5 --piper_sentence_silence 0.5
+```
+
+Piper TTS outputs `wav` format files (or raw) by default you should be able to specify any reasonable format via the `--output_format` parameter. The `opus` and `mp3` are good choices for size and compatibility.
+
+```sh
+python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --piper_speaker 256 --piper_length_scale 1.5 --piper_sentence_silence 0.5 --output_format opus
+```
 
 ## Troubleshooting
 
@@ -422,6 +428,9 @@ This may be because the Python version you are using is [less than 3.8](https://
 
 Make sure ffmpeg binary is accessible from your path. If you are on a mac and use homebrew, you can do `brew install ffmpeg`, On Ubuntu you can do `sudo apt install ffmpeg`
 
+### Piper TTS
+
+For installation-related issues, please refer to the [Piper TTS](https://github.com/rhasspy/piper) repository. It's important to note that if you're installing `piper-tts` via pip, [only Python 3.10](https://github.com/rhasspy/piper/issues/509) is currently supported. Mac users may encounter additional challenges when using the downloaded [binary](https://github.com/rhasspy/piper/issues/523). For more information on Mac-specific issues, please check [this issue](https://github.com/rhasspy/piper/issues/395) and [this pull request](https://github.com/rhasspy/piper/pull/412).
 
 ## Related Projects
 

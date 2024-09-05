@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 class EpubBookParser(BaseBookParser):
     def __init__(self, config: GeneralConfig):
         super().__init__(config)
-        logger.setLevel(config.log)
         self.book = epub.read_epub(self.config.input_file, {"ignore_ncx": True})
 
     def __str__(self) -> str:
