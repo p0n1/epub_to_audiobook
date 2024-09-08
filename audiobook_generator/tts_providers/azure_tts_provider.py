@@ -11,6 +11,7 @@ from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.utils import split_text, set_audio_tags
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
+from audiobook_generator.book_parsers import ast
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +85,14 @@ class AzureTTSProvider(BaseTTSProvider):
 
     def text_to_speech(
             self,
-            text: str,
+            chapter: ast.Chapter,
             output_file: str,
             audio_tags: AudioTags,
     ):
         # Adjust this value based on your testing
         max_chars = 1800 if self.config.language.startswith("zh") else 3000
 
-        text_chunks = split_text(text, max_chars, self.config.language)
+        text_chunks = split_text(chapter.text, max_chars, self.config.language)
 
         audio_segments = []
 
