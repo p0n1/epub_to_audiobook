@@ -1,6 +1,7 @@
 from typing import List
 
 from audiobook_generator.config.general_config import GeneralConfig
+from audiobook_generator.book_parsers import ast
 
 TTS_AZURE = "azure"
 TTS_OPENAI = "openai"
@@ -20,7 +21,7 @@ class BaseTTSProvider:  # Base interface for TTS providers
     def validate_config(self):
         raise NotImplementedError
 
-    def text_to_speech(self, *args, **kwargs):
+    def text_to_speech(self, chapter: ast.Chapter, *args, **kwargs):
         raise NotImplementedError
 
     def estimate_cost(self, total_chars):
