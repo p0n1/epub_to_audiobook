@@ -92,8 +92,7 @@ def handle_args():
 
     parser.add_argument(
         "--voice_name",
-        default="en-US-DavisMultilingualNeural",
-        help="Various TTS providers has different voice names, look up for your provider settings. Default is for Azure TTS.",
+        help="Various TTS providers has different voice names, look up for your provider settings.",
     )
 
     parser.add_argument(
@@ -188,7 +187,6 @@ def setup_logging(log_level):
 def main():
     config = handle_args()
     config.tts
-    print(f"TTS Key is{os.environ.get('MS_TTS_KEY')}")
     setup_logging(config.log)
 
     AudiobookGenerator(config).run()

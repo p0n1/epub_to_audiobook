@@ -20,7 +20,7 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
         # TTS provider specific config
-        config.voice_name = config.voice_name or "en-US-GuyNeural"
+        config.voice_name = config.voice_name or "en-US-DavisMultilingualNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
 
         # 16$ per 1 million characters
@@ -47,8 +47,8 @@ class AzureTTSProvider(BaseTTSProvider):
 
     def __str__(self) -> str:
         return (
-                super().__str__()
-                + f", voice_name={self.config.voice_name}, language={self.config.language}, break_duration={self.config.break_duration}, output_format={self.config.output_format}"
+            super().__str__()
+            + f", voice_name={self.config.voice_name}, language={self.config.language}, break_duration={self.config.break_duration}, output_format={self.config.output_format}"
         )
 
     def is_access_token_expired(self) -> bool:
@@ -77,16 +77,16 @@ class AzureTTSProvider(BaseTTSProvider):
                     f"Network error while getting access token (attempt {retry + 1}/{MAX_RETRIES}): {e}"
                 )
                 if retry < MAX_RETRIES - 1:
-                    sleep(2 ** retry)
+                    sleep(2**retry)
                 else:
                     raise e
         raise Exception("Failed to get access token")
 
     def text_to_speech(
-            self,
-            text: str,
-            output_file: str,
-            audio_tags: AudioTags,
+        self,
+        text: str,
+        output_file: str,
+        audio_tags: AudioTags,
     ):
         # Adjust this value based on your testing
         max_chars = 1800 if self.config.language.startswith("zh") else 3000
@@ -139,7 +139,7 @@ class AzureTTSProvider(BaseTTSProvider):
                         f"Error while converting text to speech (attempt {retry + 1}): {e}"
                     )
                     if retry < MAX_RETRIES - 1:
-                        sleep(2 ** retry)
+                        sleep(2**retry)
                     else:
                         raise e
 
@@ -171,7 +171,9 @@ class AzureTTSProvider(BaseTTSProvider):
         elif self.config.output_format.endswith("mp3"):
             return "mp3"
         else:
-            raise NotImplementedError(f"Unknown file extension for output format: {self.config.output_format}")
+            raise NotImplementedError(
+                f"Unknown file extension for output format: {self.config.output_format}"
+            )
 
     def validate_config(self):
         # TODO: Need to dig into Azure properties, im not familiar with them, but look at OpenAI as ref example
