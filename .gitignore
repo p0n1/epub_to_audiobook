@@ -33,3 +33,6 @@ private_examples/
 scripts/
 *.onnx
 *.onnx.json
+
+# Environment variables
+.env

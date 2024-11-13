@@ -1,5 +1,7 @@
 import argparse
+from ast import parse
 import logging
+import os
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
@@ -7,8 +9,13 @@ from audiobook_generator.tts_providers.base_tts_provider import (
     get_supported_tts_providers,
 )
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def handle_args():
+
     parser = argparse.ArgumentParser(description="Convert text book to audiobook")
     parser.add_argument("input_file", help="Path to the EPUB file")
     parser.add_argument("output_folder", help="Path to the output folder")
@@ -85,7 +92,8 @@ def handle_args():
 
     parser.add_argument(
         "--voice_name",
-        help="Various TTS providers has different voice names, look up for your provider settings.",
+        default="en-US-DavisMultilingualNeural",
+        help="Various TTS providers has different voice names, look up for your provider settings. Default is for Azure TTS.",
     )
 
     parser.add_argument(
@@ -179,7 +187,8 @@ def setup_logging(log_level):
 
 def main():
     config = handle_args()
-
+    config.tts
+    print(f"TTS Key is{os.environ.get('MS_TTS_KEY')}")
     setup_logging(config.log)
 
     AudiobookGenerator(config).run()
