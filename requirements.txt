@@ -5,4 +5,10 @@ openai==1.35.7
 requests==2.32.3
 socksio==1.0.0
 edge-tts==6.1.12
+<<<<<<< HEAD
 pydub==0.25.1
+=======
+pydub==0.25.1
+python-dotenv==1.0.1
+wyoming==1.6.0
+>>>>>>> 4679f9c (Init commit of local piper docker compose container)
