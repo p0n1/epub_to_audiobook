@@ -1,15 +1,21 @@
+import concurrent
+import concurrent.futures
 import html
 import io
 import logging
 import math
+import multiprocessing
 import os
+import threading
 from datetime import datetime, timedelta
 from time import sleep
+from typing import Optional
+
 import requests
 
-from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.config.general_config import GeneralConfig
-from audiobook_generator.core.utils import split_text, set_audio_tags
+from audiobook_generator.core.audio_tags import AudioTags
+from audiobook_generator.core.utils import set_audio_tags, split_text
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 logger = logging.getLogger(__name__)
@@ -29,6 +35,7 @@ class AzureTTSProvider(BaseTTSProvider):
         # access token and expiry time
         self.access_token = None
         self.token_expiry_time = datetime.utcnow()
+        self.token_lock = threading.Lock()
         super().__init__(config)
 
         subscription_key = os.environ.get("MS_TTS_KEY")
@@ -52,15 +59,21 @@ class AzureTTSProvider(BaseTTSProvider):
         )
 
     def is_access_token_expired(self) -> bool:
-        return self.access_token is None or datetime.utcnow() >= self.token_expiry_time
+        with self.token_lock:
+            return (
+                self.access_token is None or datetime.utcnow() >= self.token_expiry_time
+            )
 
     def auto_renew_access_token(self) -> str:
-        if self.access_token is None or self.is_access_token_expired():
-            logger.info(
-                f"azure tts access_token doesn't exist or is expired, getting new one"
-            )
-            self.access_token = self.get_access_token()
-            self.token_expiry_time = datetime.utcnow() + timedelta(minutes=9, seconds=1)
+        with self.token_lock:
+            if self.access_token is None or self.is_access_token_expired():
+                logger.info(
+                    f"azure tts access_token doesn't exist or is expired, getting new one"
+                )
+                self.access_token = self.get_access_token()
+                self.token_expiry_time = datetime.utcnow() + timedelta(
+                    minutes=9, seconds=1
+                )
         return self.access_token
 
     def get_access_token(self) -> str:
@@ -82,6 +95,57 @@ class AzureTTSProvider(BaseTTSProvider):
                     raise e
         raise Exception("Failed to get access token")
 
+    def process_chunk(
+        self, chunk: str, audio_tags: AudioTags, i: int, total_chunks: int
+    ) -> Optional[tuple[int, io.BytesIO]]:
+        logger.debug(
+            f"Processing chunk {i} of {total_chunks}, length={len(chunk)}, text=[{chunk}]"
+        )
+        escaped_text = html.escape(chunk)
+        logger.debug(f"Escaped text: [{escaped_text}]")
+        # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
+        escaped_text = escaped_text.replace(
+            self.get_break_string().strip(),
+            f" <break time='{self.config.break_duration}ms' /> ",
+        )  # strip in case leading bank is missing
+        logger.info(
+            f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {total_chunks}"
+        )
+        ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.config.voice_name}'>{escaped_text}</voice></speak>"
+        logger.debug(f"SSML: [{ssml}]")
+
+        for retry in range(MAX_RETRIES):
+            self.auto_renew_access_token()
+            headers = {
+                "Authorization": f"Bearer {self.access_token}",
+                "Content-Type": "application/ssml+xml",
+                "X-Microsoft-OutputFormat": self.config.output_format,
+                "User-Agent": "Python",
+            }
+            try:
+                logger.info(
+                    "Sending request to Azure TTS, data length: " + str(len(ssml))
+                )
+                response = requests.post(
+                    self.TTS_URL, headers=headers, data=ssml.encode("utf-8")
+                )
+                response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
+                logger.info(
+                    "Got response from Azure TTS, response length: "
+                    + str(len(response.content))
+                )
+                return (i, io.BytesIO(response.content))
+            except requests.exceptions.RequestException as e:
+                logger.warning(
+                    f"Error while converting text to speech (attempt {retry + 1}): {e}"
+                )
+                if retry < MAX_RETRIES - 1:
+                    sleep(2**retry)
+                else:
+                    raise e
+            finally:
+                response.close()
+
     def text_to_speech(
         self,
         text: str,
@@ -92,59 +156,29 @@ class AzureTTSProvider(BaseTTSProvider):
         max_chars = 1800 if self.config.language.startswith("zh") else 3000
 
         text_chunks = split_text(text, max_chars, self.config.language)
+        total_chunks = len(text_chunks)
 
-        audio_segments = []
-
-        for i, chunk in enumerate(text_chunks, 1):
-            logger.debug(
-                f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
-            )
-            escaped_text = html.escape(chunk)
-            logger.debug(f"Escaped text: [{escaped_text}]")
-            # replace MAGIC_BREAK_STRING with a break tag for section/paragraph break
-            escaped_text = escaped_text.replace(
-                self.get_break_string().strip(),
-                f" <break time='{self.config.break_duration}ms' /> ",
-            )  # strip in case leading bank is missing
-            logger.info(
-                f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {len(text_chunks)}"
-            )
-            ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.config.voice_name}'>{escaped_text}</voice></speak>"
-            logger.debug(f"SSML: [{ssml}]")
-
-            for retry in range(MAX_RETRIES):
-                self.auto_renew_access_token()
-                headers = {
-                    "Authorization": f"Bearer {self.access_token}",
-                    "Content-Type": "application/ssml+xml",
-                    "X-Microsoft-OutputFormat": self.config.output_format,
-                    "User-Agent": "Python",
-                }
-                try:
-                    logger.info(
-                        "Sending request to Azure TTS, data length: " + str(len(ssml))
-                    )
-                    response = requests.post(
-                        self.TTS_URL, headers=headers, data=ssml.encode("utf-8")
-                    )
-                    response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
-                    logger.info(
-                        "Got response from Azure TTS, response length: "
-                        + str(len(response.content))
-                    )
-                    audio_segments.append(io.BytesIO(response.content))
-                    break
-                except requests.exceptions.RequestException as e:
-                    logger.warning(
-                        f"Error while converting text to speech (attempt {retry + 1}): {e}"
-                    )
-                    if retry < MAX_RETRIES - 1:
-                        sleep(2**retry)
-                    else:
-                        raise e
-
+        audio_segments: list[tuple[int, io.BytesIO]] = []
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=multiprocessing.cpu_count()
+        ) as executor:
+            futures = {
+                executor.submit(
+                    self.process_chunk, chunk, audio_tags, i, total_chunks
+                ): i
+                for i, chunk in enumerate(text_chunks, 1)
+            }
+            for i, chunk in enumerate(text_chunks, 1):
+                logger.debug(
+                    f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
+                )
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    audio_segments.append(result)
         with open(output_file, "wb") as outfile:
-            for segment in audio_segments:
+
+            for _, segment in sorted(audio_segments, key=lambda x: x[0]):
                 segment.seek(0)
                 outfile.write(segment.read())
 
