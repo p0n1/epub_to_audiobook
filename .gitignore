@@ -36,3 +36,6 @@ scripts/
 
 # Models
 piper_models/*
+
+# Env files
+.env

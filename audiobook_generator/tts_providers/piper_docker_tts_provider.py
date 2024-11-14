@@ -1,4 +1,3 @@
-from math import e
 import os
 import asyncio
 import logging
@@ -128,13 +127,9 @@ class PiperCommWithPauses:
             )
             estimated_remaining_time_m = total_seconds_remaining // 60
             estimated_remaining_time_s = total_seconds_remaining % 60
-            print(
+            logger.info(
                 f"Processed {len(results)} of {len(tasks)} chunks in chapter. Estimated time remaining for chapter: {round(estimated_remaining_time_m)} min, {round(estimated_remaining_time_s)} sec",
-                end="\r",
-                flush=True,
             )
-
-        # results = await asyncio.gather(*tasks, return_exceptions=True)
 
         audio_segments = []
         # Collect results and reconstruct the audio segments in order
