@@ -34,5 +34,8 @@ scripts/
 *.onnx
 *.onnx.json
 
-# Environment variables
+# Models
+piper_models/*
+
+# Env files
 .env
