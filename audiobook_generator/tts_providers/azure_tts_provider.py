@@ -35,7 +35,7 @@ class AzureTTSProvider(BaseTTSProvider):
         # access token and expiry time
         self.access_token = None
         self.token_expiry_time = datetime.utcnow()
-        self.token_lock = threading.Lock()
+        self.token_lock = threading.RLock()
         super().__init__(config)
 
         subscription_key = os.environ.get("MS_TTS_KEY")
@@ -78,6 +78,7 @@ class AzureTTSProvider(BaseTTSProvider):
 
     def get_access_token(self) -> str:
         for retry in range(MAX_RETRIES):
+            response = None
             try:
                 logger.info("Getting new access token")
                 response = requests.post(self.TOKEN_URL, headers=self.TOKEN_HEADERS)
@@ -93,6 +94,9 @@ class AzureTTSProvider(BaseTTSProvider):
                     sleep(2**retry)
                 else:
                     raise e
+            finally:
+                if response is not None:
+                    response.close()
         raise Exception("Failed to get access token")
 
     def process_chunk(
@@ -115,13 +119,14 @@ class AzureTTSProvider(BaseTTSProvider):
         logger.debug(f"SSML: [{ssml}]")
 
         for retry in range(MAX_RETRIES):
-            self.auto_renew_access_token()
+            access_token = self.auto_renew_access_token()
             headers = {
-                "Authorization": f"Bearer {self.access_token}",
+                "Authorization": f"Bearer {access_token}",
                 "Content-Type": "application/ssml+xml",
                 "X-Microsoft-OutputFormat": self.config.output_format,
                 "User-Agent": "Python",
             }
+            response = None  # Initialize response
             try:
                 logger.info(
                     "Sending request to Azure TTS, data length: " + str(len(ssml))
@@ -129,7 +134,7 @@ class AzureTTSProvider(BaseTTSProvider):
                 response = requests.post(
                     self.TTS_URL, headers=headers, data=ssml.encode("utf-8")
                 )
-                response.raise_for_status()  # Will raise HTTPError for 4XX or 5XX status
+                response.raise_for_status()
                 logger.info(
                     "Got response from Azure TTS, response length: "
                     + str(len(response.content))
@@ -137,14 +142,15 @@ class AzureTTSProvider(BaseTTSProvider):
                 return (i, io.BytesIO(response.content))
             except requests.exceptions.RequestException as e:
                 logger.warning(
-                    f"Error while converting text to speech (attempt {retry + 1}): {e}"
+                    f"Error while converting text to speech (attempt {retry + 1}/{MAX_RETRIES}): {e}"
                 )
                 if retry < MAX_RETRIES - 1:
                     sleep(2**retry)
                 else:
                     raise e
             finally:
-                response.close()
+                if response is not None:
+                    response.close()
 
     def text_to_speech(
         self,
@@ -160,7 +166,7 @@ class AzureTTSProvider(BaseTTSProvider):
 
         audio_segments: list[tuple[int, io.BytesIO]] = []
         with concurrent.futures.ThreadPoolExecutor(
-            max_workers=multiprocessing.cpu_count()
+            max_workers=4  # multiprocessing.cpu_count()
         ) as executor:
             futures = {
                 executor.submit(
@@ -173,9 +179,12 @@ class AzureTTSProvider(BaseTTSProvider):
                     f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
                 )
             for future in concurrent.futures.as_completed(futures):
-                result = future.result()
-                if result:
-                    audio_segments.append(result)
+                try:
+                    result = future.result()
+                    if result:
+                        audio_segments.append(result)
+                except Exception as e:
+                    logger.error(f"Error processing chunk: {e}")
         with open(output_file, "wb") as outfile:
 
             for _, segment in sorted(audio_segments, key=lambda x: x[0]):
