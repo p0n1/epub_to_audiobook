@@ -438,6 +438,17 @@ Piper TTS outputs `wav` format files (or raw) by default you should be able to s
 python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_name <path_to>/en_US-libritts_r-medium.onnx --piper_speaker 256 --piper_length_scale 1.5 --piper_sentence_silence 0.5 --output_format opus
 ```
 
+*Alternatively, you can use the following procedure to use piper in a docker container, which simplifies the process of running everything locally.*
+
+1. Ensure you have docker desktop installed on your system. See [Docker](https://www.docker.com/) to install (or use the [homebrew](https://formulae.brew.sh/formula/docker) formula).
+2. Download a Piper model & config file (see the [piper repo](https://github.com/rhasspy/piper) for details) and place them in the [piper_models](./piper_models/) directory at the top level of this project.
+3. Edit the [docker compose file](./docker-compose.piper-example.yml) to:
+   - In the `piper` container, set the `PIPER_VOICE` environment variable to the name of the model file you downloaded.
+   - In the `piper` container, map the `volumes` to the location of the piper models on your system (if you used the provided directory described in step 2, you can leave this as is).
+   - In the `epub_to_audiobook` container, update the `volumes` mapping from `<path/to/epub/dir/on/host>` to the actual path to the epub on your host machine.
+   - In the `epub_to_audiobook` container, modify the `command` to match the parameters you want to use for the conversion. Make sure to keep `python main.py --tts piper_docker --no_prompt` at the beginning of the command.
+4. Run `docker-compose -f docker-compose.piper-example.yml up` to start the conversion process. Note that the current config in the docker compose will automatically start the process, entirely in the container. If you want to run the main python process outside the container, you can uncomment the command `command: tail -f /dev/null`, and use `docker exec -it epub_to_audiobook /bin/bash` to connect to the container and run the python script manually (see comments in the  [docker compose file](./docker-compose.piper-example.yml) for more details).
+
 ## Troubleshooting
 
 ### ModuleNotFoundError: No module named 'importlib_metadata'
