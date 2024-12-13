@@ -33,3 +33,9 @@ private_examples/
 scripts/
 *.onnx
 *.onnx.json
+
+# Models
+piper_models/*
+
+# Env files
+.env
