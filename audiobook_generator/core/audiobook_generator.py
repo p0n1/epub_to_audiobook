@@ -36,8 +36,6 @@ class AudiobookGenerator:
 
     def setup_directories(self, book_title):
         """Setup output and temp directories"""
-        os.makedirs(self.config.output_folder, exist_ok=True)
-        
         if self.config.temp_dir:
             # Create temp dir if it doesn't exist
             os.makedirs(self.config.temp_dir, exist_ok=True)
@@ -47,6 +45,8 @@ class AudiobookGenerator:
             os.makedirs(self.temp_folder, exist_ok=True)
             self.working_dir = self.temp_folder
         else:
+            # If not using temp dir, create output folder immediately
+            os.makedirs(self.config.output_folder, exist_ok=True)
             self.working_dir = self.config.output_folder
 
     def cleanup_temp_folder(self):
@@ -56,16 +56,26 @@ class AudiobookGenerator:
             logger.info(f"Cleaned up temporary directory: {self.temp_folder}")
 
     def move_files_to_output(self):
-        """Move all files from temp folder to output folder"""
+        """Copy all files from temp folder to output folder, then clean up temp"""
         if not self.temp_folder:
             return
 
-        logger.info("Moving files from temp folder to output folder...")
-        for filename in os.listdir(self.temp_folder):
-            src = os.path.join(self.temp_folder, filename)
-            dst = os.path.join(self.config.output_folder, filename)
-            shutil.move(src, dst)
-        logger.info("Successfully moved all files to output folder")
+        # Create output folder just before copying files
+        os.makedirs(self.config.output_folder, exist_ok=True)
+        
+        logger.info("Copying files from temp folder to output folder...")
+        try:
+            for filename in os.listdir(self.temp_folder):
+                src = os.path.join(self.temp_folder, filename)
+                dst = os.path.join(self.config.output_folder, filename)
+                shutil.copy2(src, dst)  # copy2 preserves metadata
+            logger.info("Successfully copied all files to output folder")
+            
+            # Only clean up temp folder after successful copy
+            self.cleanup_temp_folder()
+        except Exception as e:
+            logger.error(f"Error copying files to output folder: {e}")
+            raise
 
     def run(self):
         try:
