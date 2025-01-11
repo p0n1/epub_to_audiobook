@@ -107,12 +107,14 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --tts {azure,openai,edge,piper}
+  --tts {azure,openai,openai_compatible,edge,piper}
                         Choose TTS provider (default: azure). azure: Azure
                         Cognitive Services, openai: OpenAI TTS API. When using
                         azure, environment variables MS_TTS_KEY and
                         MS_TTS_REGION must be set. When using openai,
                         environment variable OPENAI_API_KEY must be set.
+                        When using openai_compatible, both environment variables 
+                        OPENAI_BASE_URL and OPENAI_API_KEY must be set
   --log {DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Log level (default: INFO), can be DEBUG, INFO,
                         WARNING, ERROR, CRITICAL
@@ -305,6 +307,16 @@ Check this [step by step guide](https://gist.github.com/p0n1/cba98859cdb6331cc1a
 ## How to Get Your OpenAI API Key?
 
 Check https://platform.openai.com/docs/quickstart/account-setup. Make sure you check the [price](https://openai.com/pricing) details before use.
+
+## Using an OpenAI-compatible service
+
+It is possible to use an OpenAI-compatible service, like [matatonic/openedai-speech](https://github.com/matatonic/openedai-speech). In that case, it **is required** to set the `OPENAI_BASE_URL` environment variable, otherwise it would just default to the standard OpenAI service. While the compatible service might not require an API key, the OpenAI client still does, so make sure to set it to something nonsensical.
+
+If your OpenAI-compatible service is running on `http://127.0.0.1:8000` and you have added a custom voice named `skippy`, you can use the following command:
+
+```shell
+docker run -i -t --rm -v ./:/app -e OPENAI_BASE_URL=http://127.0.0.1:8000/v1 -e OPENAI_API_KEY=nope ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts openai_compatible --voice_name=skippy --model_name=tts-1-hd
+```
 
 ## ✨ About Edge TTS
 

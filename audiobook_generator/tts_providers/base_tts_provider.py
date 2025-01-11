@@ -4,6 +4,7 @@ from audiobook_generator.config.general_config import GeneralConfig
 
 TTS_AZURE = "azure"
 TTS_OPENAI = "openai"
+TTS_OPENAI_COMPATIBLE = "openai_compatible"
 TTS_EDGE = "edge"
 TTS_PIPER = "piper"
 TTS_PIPER_DOCKER = "piper_docker"
@@ -36,7 +37,7 @@ class BaseTTSProvider:  # Base interface for TTS providers
 
 # Common support methods for all TTS providers
 def get_supported_tts_providers() -> List[str]:
-    return [TTS_AZURE, TTS_OPENAI, TTS_EDGE, TTS_PIPER, TTS_PIPER_DOCKER]
+    return [TTS_AZURE, TTS_OPENAI, TTS_OPENAI_COMPATIBLE, TTS_EDGE, TTS_PIPER, TTS_PIPER_DOCKER]
 
 
 def get_tts_provider(config) -> BaseTTSProvider:
@@ -52,6 +53,12 @@ def get_tts_provider(config) -> BaseTTSProvider:
         )
 
         return OpenAITTSProvider(config)
+    elif config.tts == TTS_OPENAI_COMPATIBLE:
+        from audiobook_generator.tts_providers.openai_compatible_tts_provider import (
+            OpenAICompatibleTTSProvider,
+        )
+
+        return OpenAICompatibleTTSProvider(config)
     elif config.tts == TTS_EDGE:
         from audiobook_generator.tts_providers.edge_tts_provider import EdgeTTSProvider
 

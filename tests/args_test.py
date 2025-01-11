@@ -17,6 +17,12 @@ class TestHandleArgs(unittest.TestCase):
         config = handle_args()
         self.assertEqual(config.tts, 'openai')
 
+    # Test openai_compatible arguments
+    @patch('sys.argv', ['program', 'input_file.epub', 'output_folder', '--tts', 'openai_compatible'])
+    def test_openai_compatible_args(self):
+        config = handle_args()
+        self.assertEqual(config.tts, 'openai_compatible')
+
     # Test unsupported TTS provider
     @patch('sys.argv', ['program', 'input_file.epub', 'output_folder', '--tts', 'unsupported_tts'])
     def test_unsupported_tts(self):
