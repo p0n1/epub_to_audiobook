@@ -16,5 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Set the working directory to /app
 WORKDIR /app
 
-# Set this as the default command
-# ENTRYPOINT [ "python", "/app_src/main.py" ]
+# Copy and set the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set the entrypoint script as the default command
+ENTRYPOINT ["/entrypoint.sh"]
