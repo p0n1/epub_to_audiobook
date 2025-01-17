@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import List, Tuple
+from typing import List
 
 import ebooklib
 from bs4 import BeautifulSoup
@@ -8,8 +8,63 @@ from ebooklib import epub
 
 from audiobook_generator.book_parsers.base_book_parser import BaseBookParser
 from audiobook_generator.config.general_config import GeneralConfig
+from audiobook_generator.book_parsers import ast
 
 logger = logging.getLogger(__name__)
+
+
+def _split_by_break(item: ast.Text) -> List[ast.Item]:
+    parts = item.text.split("\n")
+    return [elem for x in parts for elem in (ast.Text(x + " "), ast.Break()) if x][:-1]
+
+
+def _merge_item(item: ast.Item, new_items: List[ast.Item]):
+    if isinstance(item, ast.Break):
+        if new_items and isinstance(new_items[-1], ast.Break):
+            return
+        else:
+            # add break
+            new_items.append(item)
+    elif isinstance(item, ast.Text):
+        if new_items and isinstance(new_items[-1], ast.Text):
+            new_items[-1]._text += item.text
+        else:
+            # add new text
+            new_items.append(item)
+    elif isinstance(item, ast.Items):
+        item.items = _split_and_merge(item.items)
+        new_items.append(item)
+    else:
+        new_items.append(item)
+
+
+def _split_and_merge(items: List[ast.Item]) -> List[ast.Item]:
+    # split text by breaks
+    new_items = []
+    for item in items:
+        if isinstance(item, ast.Text):
+            new_items += _split_by_break(item)
+        else:
+            new_items.append(item)
+
+    # merge items together
+    items = []
+    for item in new_items:
+        _merge_item(item, items)
+
+    return items
+
+
+def _parse(soup: BeautifulSoup) -> List[ast.Item]:
+    items = []
+    for item in soup:
+        if isinstance(item, str):
+            items.append(ast.Text(_text=item))
+        elif item.name == "blockquote":
+            items.append(ast.Quote(items=_parse(item)))
+        else:
+            items += _parse(item)
+    return items
 
 
 class EpubBookParser(BaseBookParser):
@@ -39,38 +94,13 @@ class EpubBookParser(BaseBookParser):
             return self.book.get_metadata("DC", "creator")[0][0]
         return "Unknown"
 
-    def get_chapters(self, break_string) -> List[Tuple[str, str]]:
+    def get_chapters(self, break_string) -> List[ast.Chapter]:
         chapters = []
-        search_and_replaces = self.get_search_and_replaces()
+        search_and_replaces = []#self.get_search_and_replaces()
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")
-            raw = soup.get_text(strip=False)
-            logger.debug(f"Raw text: <{raw[:]}>")
-
-            # Replace excessive whitespaces and newline characters based on the mode
-            if self.config.newline_mode == "single":
-                cleaned_text = re.sub(r"[\n]+", break_string, raw.strip())
-            elif self.config.newline_mode == "double":
-                cleaned_text = re.sub(r"[\n]{2,}", break_string, raw.strip())
-            elif self.config.newline_mode == "none":
-                cleaned_text = re.sub(r"[\n]+", " ", raw.strip())
-            else:
-                raise ValueError(f"Invalid newline mode: {self.config.newline_mode}")
-
-            logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
-            cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-            logger.debug(f"Cleaned text step 2: <{cleaned_text[:100]}>")
-
-            # Removes end-note numbers
-            if self.config.remove_endnotes:
-                cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
-                logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
-
-            # Does user defined search and replaces
-            for search_and_replace in search_and_replaces:
-                cleaned_text = re.sub(search_and_replace['search'], search_and_replace['replace'], cleaned_text)
-            logger.debug(f"Cleaned text step 5: <{cleaned_text[:100]}>")
+            raw = _split_and_merge(_parse(soup))
 
             # Get proper chapter title
             if self.config.title_mode == "auto":
@@ -81,7 +111,7 @@ class EpubBookParser(BaseBookParser):
                         title = soup.find(level).text
                         break
                 if title == "" or re.match(r'^\d{1,3}$',title) is not None:
-                    title = cleaned_text[:60]
+                    title = soup.get_text(strip=True)[:60]
             elif self.config.title_mode == "tag_text":
                 title = ""
                 title_levels = ['title', 'h1', 'h2', 'h3']
@@ -92,14 +122,14 @@ class EpubBookParser(BaseBookParser):
                 if title == "":
                     title = "<blank>"
             elif self.config.title_mode == "first_few":
-                title = cleaned_text[:60]
+                title = soup.get_text(strip=True)[:60]
             else:
                 raise ValueError("Unsupported title_mode")
             logger.debug(f"Raw title: <{title}>")
             title = self._sanitize_title(title, break_string)
             logger.debug(f"Sanitized title: <{title}>")
 
-            chapters.append((title, cleaned_text))
+            chapters.append(ast.Chapter(title=title, items=raw))
             soup.decompose()
         return chapters
 
