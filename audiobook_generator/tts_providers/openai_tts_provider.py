@@ -18,7 +18,7 @@ def get_supported_models():
 
 
 def get_supported_voices():
-    return ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    return ["alloy", "ash, "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]
 
 
 def get_supported_formats():
