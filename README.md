@@ -380,6 +380,16 @@ Here are some examples that demonstrate various option combinations:
    python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
    ```
 
+## Example using an OpenAI-compatible service
+
+It is possible to use an OpenAI-compatible service, like [matatonic/openedai-speech](https://github.com/matatonic/openedai-speech). In that case, it **is required** to set the `OPENAI_BASE_URL` environment variable, otherwise it would just default to the standard OpenAI service. While the compatible service might not require an API key, the OpenAI client still does, so make sure to set it to something nonsensical.
+
+If your OpenAI-compatible service is running on `http://127.0.0.1:8000` and you have added a custom voice named `skippy`, you can use the following command:
+
+```shell
+docker run -i -t --rm -v ./:/app -e OPENAI_BASE_URL=http://127.0.0.1:8000/v1 -e OPENAI_API_KEY=nope ghcr.io/p0n1/epub_to_audiobook your_book.epub audiobook_output --tts openai --voice_name=skippy --model_name=tts-1-hd
+```
+
 ### Examples Using Edge TTS
 
 1. **Basic conversion using Edge with default settings**  
