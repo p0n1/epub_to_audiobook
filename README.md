@@ -90,6 +90,7 @@ usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
                [--output_text] [--remove_endnotes]
                [--search_and_replace_file SEARCH_AND_REPLACE_FILE]
+               [--worker_count WORKER_COUNT]
                [--voice_name VOICE_NAME] [--output_format OUTPUT_FORMAT]
                [--model_name MODEL_NAME] [--voice_rate VOICE_RATE]
                [--voice_volume VOICE_VOLUME] [--voice_pitch VOICE_PITCH]
@@ -164,6 +165,14 @@ options:
                         is: <search>==<replace> Note that you may have to
                         specify word boundaries, to avoid replacing parts of
                         words.
+  --worker_count WORKER_COUNT
+                        Specifies the number of parallel workers to use for 
+                        audiobook generation. Increasing this value can 
+                        significantly speed up the process by processing 
+                        multiple chapters simultaneously. Note: Chapters may 
+                        not be processed in sequential order, but this will 
+                        not affect the final audiobook.
+
   --voice_name VOICE_NAME
                         Various TTS providers has different voice names, look
                         up for your provider settings.

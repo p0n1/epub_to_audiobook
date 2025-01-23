@@ -84,6 +84,15 @@ def handle_args():
     )
 
     parser.add_argument(
+        "--worker_count",
+        type=int,
+        default=1,
+        help="Specifies the number of parallel workers to use for audiobook generation. "
+        "Increasing this value can significantly speed up the process by processing multiple chapters simultaneously. "
+        "Note: Chapters may not be processed in sequential order, but this will not affect the final audiobook.",
+    )
+
+    parser.add_argument(
         "--voice_name",
         help="Various TTS providers has different voice names, look up for your provider settings.",
     )

@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import os
 
 from audiobook_generator.book_parsers.base_book_parser import get_book_parser
@@ -31,6 +32,36 @@ class AudiobookGenerator:
     def __str__(self) -> str:
         return f"{self.config}"
 
+    def process_chapter(self, idx, title, text, book_parser, tts_provider):
+        """Process a single chapter: write text (if needed) and convert to audio."""
+        try:
+            logger.info(f"Processing chapter {idx}: {title}")
+
+            # Save chapter text if required
+            if self.config.output_text:
+                text_file = os.path.join(self.config.output_folder, f"{idx:04d}_{title}.txt")
+                with open(text_file, "w", encoding="utf-8") as f:
+                    f.write(text)
+
+            # Skip audio generation in preview mode
+            if self.config.preview:
+                return
+
+            # Generate audio file
+            output_file = os.path.join(
+                self.config.output_folder,
+                f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}",
+            )
+            audio_tags = AudioTags(
+                title, book_parser.get_book_author(), book_parser.get_book_title(), idx
+            )
+            tts_provider.text_to_speech(text, output_file, audio_tags)
+
+            logger.info(f"✅ Converted chapter {idx}: {title}")
+        except Exception:
+            logger.exception(f"Error processing chapter {idx}")
+            raise
+
     def run(self):
         try:
             book_parser = get_book_parser(self.config)
@@ -59,10 +90,14 @@ class AudiobookGenerator:
                     f"Chapter start index {self.config.chapter_start} is larger than chapter end index {self.config.chapter_end}. Check your input."
                 )
 
-            logger.info(f"Converting chapters from {self.config.chapter_start} to {self.config.chapter_end}.")
+            logger.info(
+                f"Converting chapters from {self.config.chapter_start} to {self.config.chapter_end}."
+            )
 
             # Initialize total_characters to 0
-            total_characters = get_total_chars(chapters[self.config.chapter_start - 1:self.config.chapter_end])
+            total_characters = get_total_chars(
+                chapters[self.config.chapter_start - 1 : self.config.chapter_end]
+            )
             logger.info(f"✨ Total characters in selected book chapters: {total_characters} ✨")
             rough_price = tts_provider.estimate_cost(total_characters)
             print(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
@@ -75,36 +110,19 @@ class AudiobookGenerator:
             else:
                 confirm_conversion()
 
-            # Loop through each chapter and convert it to speech using the provided TTS provider
-            for idx, (title, text) in enumerate(chapters, start=1):
-                if idx < self.config.chapter_start:
-                    continue
-                if idx > self.config.chapter_end:
-                    break
-                logger.info(
-                    f"Converting chapter {idx}/{len(chapters)}: {title}, characters: {len(text)}"
+            # Prepare chapters for processing
+            chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
+            tasks = (
+                (idx, title, text, book_parser, tts_provider)
+                for idx, (title, text) in enumerate(
+                    chapters_to_process, start=self.config.chapter_start
                 )
+            )
 
-                if self.config.output_text:
-                    text_file = os.path.join(self.config.output_folder, f"{idx:04d}_{title}.txt")
-                    with open(text_file, "w", encoding='utf-8') as file:
-                        file.write(text)
+            # Use multiprocessing to process chapters in parallel
+            with multiprocessing.Pool(processes=self.config.worker_count) as pool:
+                pool.starmap(self.process_chapter, tasks)
 
-                if self.config.preview:
-                    continue
-
-                output_file = os.path.join(self.config.output_folder,
-                                           f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}")
-
-                audio_tags = AudioTags(title, book_parser.get_book_author(), book_parser.get_book_title(), idx)
-                tts_provider.text_to_speech(
-                    text,
-                    output_file,
-                    audio_tags,
-                )
-                logger.info(
-                    f"✅ Converted chapter {idx}/{len(chapters)}: {title}"
-                )
             logger.info(f"All chapters converted. 🎉🎉🎉")
 
         except KeyboardInterrupt:
