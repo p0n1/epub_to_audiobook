@@ -22,8 +22,7 @@ COPY . .
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy and configure the entrypoint script
-COPY entrypoint.sh /entrypoint.sh
+# Make the entrypoint script executable
 RUN chmod +x /entrypoint.sh
 
 # Set the entrypoint script as the default command
