@@ -13,16 +13,8 @@ from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 logger = logging.getLogger(__name__)
 
 
-def get_supported_models():
-    return ["tts-1", "tts-1-hd"]
-
-
-def get_supported_voices():
-    return ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
-
-
 def get_supported_formats():
-    return ["mp3", "aac", "flac", "opus"]
+    return ["mp3", "aac", "flac", "opus", "wav"]
 
 
 class OpenAITTSProvider(BaseTTSProvider):
@@ -80,10 +72,6 @@ class OpenAITTSProvider(BaseTTSProvider):
         return self.config.output_format
 
     def validate_config(self):
-        if self.config.model_name not in get_supported_models():
-            raise ValueError(f"OpenAI: Unsupported model name: {self.config.model_name}")
-        if self.config.voice_name not in get_supported_voices():
-            raise ValueError(f"OpenAI: Unsupported voice name: {self.config.voice_name}")
         if self.config.output_format not in get_supported_formats():
             raise ValueError(f"OpenAI: Unsupported output format: {self.config.output_format}")
 
