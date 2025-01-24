@@ -8,6 +8,7 @@ class GeneralConfig:
         self.log = args.log
         self.no_prompt = args.no_prompt
         self.title_mode = args.title_mode
+        self.worker_count = args.worker_count
 
         # Book parser specific arguments
         self.newline_mode = args.newline_mode
@@ -39,4 +40,4 @@ class GeneralConfig:
         self.piper_length_scale = args.piper_length_scale
 
     def __str__(self):
-        return ', '.join(f"{key}={value}" for key, value in self.__dict__.items())
+        return ", ".join(f"{key}={value}" for key, value in self.__dict__.items())
