@@ -125,6 +125,17 @@ class AudiobookGenerator:
 
             logger.info(f"All chapters converted. 🎉🎉🎉")
 
+            if self.config.save_cover_image:
+                cover = book_parser.get_cover()
+
+                if cover:
+                    with open(os.path.join(self.config.output_folder, cover.file_name), "wb") as f:
+                        f.write(cover.get_content())
+
+                    logger.info("🖼️ Cover image was saved as %s", cover.file_name)
+                else:
+                    logger.error("❌ It was not possible to fetch the cover image")
+
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
             exit()

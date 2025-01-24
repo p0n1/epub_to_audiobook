@@ -1,7 +1,8 @@
 import logging
 from typing import List
-from mutagen.id3._frames import TIT2, TPE1, TALB, TRCK
+
 from mutagen.id3 import ID3, ID3NoHeaderError
+from mutagen.id3._frames import TIT2, TPE1, TALB, TRCK, APIC
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +39,7 @@ def split_text(text: str, max_chars: int, language: str) -> List[str]:
     for i, chunk in enumerate(chunks, 1):
         first_100 = chunk[:100]
         last_100 = chunk[-100:] if len(chunk) > 100 else ""
-        logger.info(
-            f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}"
-        )
+        logger.info(f"Chunk {i}: Length={len(chunk)}, Start={first_100}..., End={last_100}")
 
     return chunks
 
