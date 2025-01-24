@@ -5,6 +5,7 @@ class GeneralConfig:
         self.output_folder = args.output_folder
         self.preview = args.preview
         self.output_text = args.output_text
+        self.save_cover_image = args.save_cover_image
         self.log = args.log
         self.no_prompt = args.no_prompt
         self.title_mode = args.title_mode
