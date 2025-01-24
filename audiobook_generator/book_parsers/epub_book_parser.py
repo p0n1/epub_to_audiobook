@@ -29,13 +29,36 @@ class EpubBookParser(BaseBookParser):
     def get_book(self):
         return self.book
 
+    def get_cover(self):
+        """
+        Attempts to retrieve the cover image of the book in the following order:
+        1. Try to get the cover using its ID.
+        2. If that fails, try to get the first item marked as a cover.
+        3. If that fails, try to get the first image.
+        Returns None if no cover or image is found.
+        """
+        try:
+            return self.book.get_item_with_id("cover")
+        except KeyError:
+            try:
+                for item in self.book.get_items_of_type(ebooklib.ITEM_COVER):
+                    return item
+            except Exception:
+                pass
+
+            try:
+                for item in self.book.get_items_of_type(ebooklib.ITEM_IMAGE):
+                    return item
+            except Exception:
+                pass
+
     def get_book_title(self) -> str:
-        if self.book.get_metadata('DC', 'title'):
+        if self.book.get_metadata("DC", "title"):
             return self.book.get_metadata("DC", "title")[0][0]
         return "Untitled"
 
     def get_book_author(self) -> str:
-        if self.book.get_metadata('DC', 'creator'):
+        if self.book.get_metadata("DC", "creator"):
             return self.book.get_metadata("DC", "creator")[0][0]
         return "Unknown"
 
@@ -69,22 +92,24 @@ class EpubBookParser(BaseBookParser):
 
             # Does user defined search and replaces
             for search_and_replace in search_and_replaces:
-                cleaned_text = re.sub(search_and_replace['search'], search_and_replace['replace'], cleaned_text)
+                cleaned_text = re.sub(
+                    search_and_replace["search"], search_and_replace["replace"], cleaned_text
+                )
             logger.debug(f"Cleaned text step 5: <{cleaned_text[:100]}>")
 
             # Get proper chapter title
             if self.config.title_mode == "auto":
                 title = ""
-                title_levels = ['title', 'h1', 'h2', 'h3']
+                title_levels = ["title", "h1", "h2", "h3"]
                 for level in title_levels:
                     if soup.find(level):
                         title = soup.find(level).text
                         break
-                if title == "" or re.match(r'^\d{1,3}$',title) is not None:
+                if title == "" or re.match(r"^\d{1,3}$", title) is not None:
                     title = cleaned_text[:60]
             elif self.config.title_mode == "tag_text":
                 title = ""
-                title_levels = ['title', 'h1', 'h2', 'h3']
+                title_levels = ["title", "h1", "h2", "h3"]
                 for level in title_levels:
                     if soup.find(level):
                         title = soup.find(level).text
@@ -109,8 +134,18 @@ class EpubBookParser(BaseBookParser):
             with open(self.config.search_and_replace_file) as fp:
                 search_and_replace_content = fp.readlines()
                 for search_and_replace in search_and_replace_content:
-                    if '==' in search_and_replace and not search_and_replace.startswith('==') and not search_and_replace.endswith('==') and not search_and_replace.startswith('#'):
-                        search_and_replaces = search_and_replaces + [ {'search': r"{}".format(search_and_replace.split('==')[0]), 'replace': r"{}".format(search_and_replace.split('==')[1][:-1])} ]
+                    if (
+                        "==" in search_and_replace
+                        and not search_and_replace.startswith("==")
+                        and not search_and_replace.endswith("==")
+                        and not search_and_replace.startswith("#")
+                    ):
+                        search_and_replaces = search_and_replaces + [
+                            {
+                                "search": r"{}".format(search_and_replace.split("==")[0]),
+                                "replace": r"{}".format(search_and_replace.split("==")[1][:-1]),
+                            }
+                        ]
         return search_and_replaces
 
     @staticmethod

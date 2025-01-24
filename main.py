@@ -68,6 +68,13 @@ def handle_args():
         action="store_true",
         help="Enable Output Text. This will export a plain text file for each chapter specified and write the files to the output folder specified.",
     )
+
+    parser.add_argument(
+        "--save_cover_image",
+        action="store_true",
+        help="Fetch and save the cover image to the specified output folder. Useful for further processing, e.g., with m4b-tool.",
+    )
+
     parser.add_argument(
         "--remove_endnotes",
         action="store_true",
