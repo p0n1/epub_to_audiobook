@@ -11,6 +11,11 @@ from audiobook_generator.tts_providers.base_tts_provider import (
 def handle_args():
     parser = argparse.ArgumentParser(description="Convert text book to audiobook")
     parser.add_argument("input_file", help="Path to the EPUB file")
+    parser.add_argument(
+        "--use_temp_dir",
+        action="store_true",
+        help="Use temporary directory ('tmp' in working directory) for processing files before moving them to output folder.",
+    )
     parser.add_argument("output_folder", help="Path to the output folder")
     parser.add_argument(
         "--tts",

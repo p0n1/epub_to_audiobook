@@ -2,6 +2,7 @@ class GeneralConfig:
     def __init__(self, args):
         # General arguments
         self.input_file = args.input_file
+        self.temp_dir = "tmp" if args.use_temp_dir else None
         self.output_folder = args.output_folder
         self.preview = args.preview
         self.output_text = args.output_text

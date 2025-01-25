@@ -11,6 +11,7 @@ venv/
 .run/
 
 # Temporary files
+tmp/
 *.tmp
 *.swp
 *.swo
