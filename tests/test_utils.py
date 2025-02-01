@@ -4,7 +4,8 @@ from audiobook_generator.config.general_config import GeneralConfig
 
 def get_azure_config():
     args = MagicMock(
-        input_file='../../../examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub',
+        input_file='examples/test1.epub',
+        #input_file='examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub',
         output_folder='output',
         preview=False,
         output_text=False,
@@ -12,6 +13,7 @@ def get_azure_config():
         newline_mode='double',
         chapter_start=1,
         chapter_end=-1,
+        title_mode="auto",
         remove_endnotes=False,
         tts='azure',
         language='en-US',
