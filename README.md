@@ -88,7 +88,7 @@ usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--newline_mode {single,double,none}]
                [--title_mode {auto,tag_text,first_few}]
                [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
-               [--output_text] [--remove_endnotes]
+               [--output_text] [--save_cover_image] [--remove_endnotes]
                [--search_and_replace_file SEARCH_AND_REPLACE_FILE]
                [--worker_count WORKER_COUNT]
                [--voice_name VOICE_NAME] [--output_format OUTPUT_FORMAT]
@@ -156,6 +156,8 @@ options:
   --output_text         Enable Output Text. This will export a plain text file
                         for each chapter specified and write the files to the
                         output folder specified.
+  --save_cover_image    Fetch and save the cover image to the specified output 
+                        folder. Useful for further processing, e.g., with m4b-tool.
   --remove_endnotes     This will remove endnote numbers from the end or
                         middle of sentences. This is useful for academic
                         books.
