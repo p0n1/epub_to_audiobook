@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 import os
+from pathlib import Path
 
 from audiobook_generator.book_parsers.base_book_parser import get_book_parser
 from audiobook_generator.config.general_config import GeneralConfig
@@ -129,10 +130,10 @@ class AudiobookGenerator:
                 cover = book_parser.get_cover()
 
                 if cover:
-                    with open(os.path.join(self.config.output_folder, cover.file_name), "wb") as f:
-                        f.write(cover.get_content())
+                    cover_path = Path(self.config.output_folder) / f"cover{Path(cover.file_name).suffix}"
+                    cover_path.write_bytes(cover.get_content())
 
-                    logger.info("🖼️ Cover image was saved as %s", cover.file_name)
+                    logger.info("🖼️ Cover image was saved as %s", cover_path.name)
                 else:
                     logger.error("❌ It was not possible to fetch the cover image")
 
