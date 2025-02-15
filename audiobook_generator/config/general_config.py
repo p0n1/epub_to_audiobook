@@ -1,8 +1,11 @@
+from pathlib import Path
+
+
 class GeneralConfig:
     def __init__(self, args):
         # General arguments
         self.input_file = args.input_file
-        self.output_folder = args.output_folder
+        self.output_folder: Path = args.output_folder
         self.preview = args.preview
         self.output_text = args.output_text
         self.save_cover_image = args.save_cover_image

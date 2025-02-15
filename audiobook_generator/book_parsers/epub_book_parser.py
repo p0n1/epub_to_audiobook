@@ -30,27 +30,10 @@ class EpubBookParser(BaseBookParser):
         return self.book
 
     def get_cover(self):
-        """
-        Attempts to retrieve the cover image of the book in the following order:
-        1. Try to get the cover using its ID.
-        2. If that fails, try to get the first item marked as a cover.
-        3. If that fails, try to get the first image.
-        Returns None if no cover or image is found.
-        """
-        try:
-            return self.book.get_item_with_id("cover")
-        except KeyError:
-            try:
-                for item in self.book.get_items_of_type(ebooklib.ITEM_COVER):
-                    return item
-            except Exception:
-                pass
-
-            try:
-                for item in self.book.get_items_of_type(ebooklib.ITEM_IMAGE):
-                    return item
-            except Exception:
-                pass
+        """Return the cover if found"""
+        for item in self.book.get_items_of_type(ebooklib.ITEM_IMAGE):
+            if "cover" in item.file_name.lower():
+                return item
 
     def get_book_title(self) -> str:
         if self.book.get_metadata("DC", "title"):

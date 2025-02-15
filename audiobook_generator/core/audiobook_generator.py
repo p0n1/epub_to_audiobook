@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import os
 from pathlib import Path
 
 from audiobook_generator.book_parsers.base_book_parser import get_book_parser
@@ -40,18 +39,17 @@ class AudiobookGenerator:
 
             # Save chapter text if required
             if self.config.output_text:
-                text_file = os.path.join(self.config.output_folder, f"{idx:04d}_{title}.txt")
-                with open(text_file, "w", encoding="utf-8") as f:
-                    f.write(text)
+                text_file = self.config.output_folder / f"{idx:04d}_{title}.txt"
+                text_file.write_text(text, encoding="utf-8")
 
             # Skip audio generation in preview mode
             if self.config.preview:
                 return
 
             # Generate audio file
-            output_file = os.path.join(
-                self.config.output_folder,
-                f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}",
+            output_file = (
+                self.config.output_folder
+                / f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}"
             )
             audio_tags = AudioTags(
                 title, book_parser.get_book_author(), book_parser.get_book_title(), idx
@@ -68,7 +66,17 @@ class AudiobookGenerator:
             book_parser = get_book_parser(self.config)
             tts_provider = get_tts_provider(self.config)
 
-            os.makedirs(self.config.output_folder, exist_ok=True)
+            self.config.output_folder.mkdir(parents=True, exist_ok=True)
+
+            if self.config.save_cover_image:
+                if cover := book_parser.get_cover():
+                    cover_path = self.config.output_folder / f"cover{Path(cover.file_name).suffix}"
+                    cover_path.write_bytes(cover.get_content())
+
+                    logger.info("🖼️ Cover image was saved as %s", cover_path.name)
+                else:
+                    logger.error("❌ It was not possible to fetch the cover image")
+
             chapters = book_parser.get_chapters(tts_provider.get_break_string())
             # Filter out empty or very short chapters
             chapters = [(title, text) for title, text in chapters if text.strip()]
@@ -125,18 +133,6 @@ class AudiobookGenerator:
                 pool.starmap(self.process_chapter, tasks)
 
             logger.info(f"All chapters converted. 🎉🎉🎉")
-
-            if self.config.save_cover_image:
-                cover = book_parser.get_cover()
-
-                if cover:
-                    cover_path = Path(self.config.output_folder) / f"cover{Path(cover.file_name).suffix}"
-                    cover_path.write_bytes(cover.get_content())
-
-                    logger.info("🖼️ Cover image was saved as %s", cover_path.name)
-                else:
-                    logger.error("❌ It was not possible to fetch the cover image")
-
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
             exit()

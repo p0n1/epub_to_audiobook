@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
@@ -11,7 +12,7 @@ from audiobook_generator.tts_providers.base_tts_provider import (
 def handle_args():
     parser = argparse.ArgumentParser(description="Convert text book to audiobook")
     parser.add_argument("input_file", help="Path to the EPUB file")
-    parser.add_argument("output_folder", help="Path to the output folder")
+    parser.add_argument("output_folder", help="Path to the output folder", type=Path)
     parser.add_argument(
         "--tts",
         choices=get_supported_tts_providers(),
