@@ -1,6 +1,9 @@
 import logging
+import os
 import re
 from typing import List, Tuple
+import shutil
+import zipfile
 
 import ebooklib
 from bs4 import BeautifulSoup
@@ -12,10 +15,98 @@ from audiobook_generator.config.general_config import GeneralConfig
 logger = logging.getLogger(__name__)
 
 
+def read_epub_safely(epub_path):
+    """
+    Safely read an EPUB file, attempting to fix common issues if needed.
+    """
+    common_missing_files = [
+        'page_styles.css',
+        'stylesheet.css',
+        'style.css',
+        'styles.css'
+    ]
+
+    # Add all potentially missing files
+    try:
+        with zipfile.ZipFile(epub_path, 'a') as epub_zip:
+            existing_files = set(epub_zip.namelist())
+
+            for css_file in common_missing_files:
+                if css_file not in existing_files:
+                    logger.info(f"Adding missing {css_file} to EPUB file...")
+                    epub_zip.writestr(css_file, '/* Empty CSS file */')
+    except Exception as e:
+        logger.warning(f"Could not preemptively fix EPUB file: {e}")
+        # Continue anyway, we'll try to read the file as is
+
+    # Now try to read the EPUB
+    try:
+        return epub.read_epub(epub_path, {'ignore_ncx': True})
+    except KeyError as e:
+        # Extract the missing file name from the error
+        missing_file_match = re.search(r"'([^']*)'", str(e))
+        if missing_file_match:
+            missing_file = missing_file_match.group(1)
+            logger.warning(f"EPUB file is missing '{missing_file}'. Attempting to fix...")
+
+            try:
+                # Try to add the specific missing file
+                with zipfile.ZipFile(epub_path, 'a') as epub_zip:
+                    epub_zip.writestr(missing_file, '/* Empty file */')
+                logger.info(f"Added missing file: {missing_file}. Trying to read EPUB again...")
+                return epub.read_epub(epub_path, {'ignore_ncx': True})
+            except Exception as fix_error:
+                logger.error(f"Error while fixing EPUB: {fix_error}")
+                # If we still can't read it, try a more drastic approach
+                try:
+                    logger.info("Attempting to extract and repackage the EPUB...")
+                    import tempfile
+
+                    # Create a temporary directory
+                    temp_dir = tempfile.mkdtemp()
+                    try:
+                        # Extract the EPUB
+                        with zipfile.ZipFile(epub_path, 'r') as epub_zip:
+                            epub_zip.extractall(temp_dir)
+
+                        # Create all missing CSS files
+                        for css_file in common_missing_files:
+                            css_path = os.path.join(temp_dir, css_file)
+                            if not os.path.exists(css_path):
+                                with open(css_path, 'w') as f:
+                                    f.write('/* Empty CSS file */')
+
+                        # Create a new EPUB file
+                        temp_epub = epub_path + '.fixed'
+                        with zipfile.ZipFile(temp_epub, 'w') as new_epub:
+                            for root, _, files in os.walk(temp_dir):
+                                for file in files:
+                                    file_path = os.path.join(root, file)
+                                    arcname = os.path.relpath(file_path, temp_dir)
+                                    new_epub.write(file_path, arcname)
+
+                        # Replace the original with the fixed version
+                        shutil.move(temp_epub, epub_path)
+                        logger.info("EPUB file has been repackaged. Trying to read again...")
+
+                        return epub.read_epub(epub_path, {'ignore_ncx': True})
+                    finally:
+                        # Clean up the temporary directory
+                        shutil.rmtree(temp_dir)
+                except Exception as repackage_error:
+                    logger.error(f"Error while repackaging EPUB: {repackage_error}")
+                    raise e
+        else:
+            # For other KeyError issues, just raise the original error
+            raise
+    except Exception as e:
+        logger.error(f"Error reading EPUB file: {e}")
+        raise
+
 class EpubBookParser(BaseBookParser):
     def __init__(self, config: GeneralConfig):
         super().__init__(config)
-        self.book = epub.read_epub(self.config.input_file, {"ignore_ncx": True})
+        self.book = read_epub_safely(self.config.input_file)
 
     def __str__(self) -> str:
         return super().__str__()
