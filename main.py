@@ -75,6 +75,12 @@ def handle_args():
     )
 
     parser.add_argument(
+        "--remove_reference_numbers",
+        action="store_true",
+        help="This will remove reference numbers from the end or middle of sentences (e.g [3] or [12.1]). Also useful for academic books."
+    )
+
+    parser.add_argument(
         "--search_and_replace_file",
         default="",
         help="""Path to a file that contains 1 regex replace per line, to help with fixing pronunciations, etc. The format is:
