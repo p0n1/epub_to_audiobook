@@ -1,0 +1,28 @@
+services:
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu
+    container_name: kokoro
+    ports:
+      - 8880:8880
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:8880/health || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  epub_to_audiobook:
+    build:
+      context: ./ # Directory containing the Dockerfile for epub_to_audiobook
+      dockerfile: Dockerfile # Name of the Dockerfile (if it's not the default 'Dockerfile')
+    container_name: epub_to_audiobook
+    environment:
+      - OPENAI_BASE_URL=http://kokoro:8880/v1
+      - OPENAI_API_KEY=nope
+    volumes:
+      - ./:/app
+      - ./<path_to_epub_file>:/epub_src 
+    #command: tail /dev/null # Uncomment this line to keep the container running, and run via connecting to it with `docker exec -it epub_to_audiobook /bin/bash`
+    command: "python main.py '<path_to_epub_file>' '<output_dir>' --tts openai --no_prompt --voice_name 'af_bella'"  # Run command directly when the containers start up
+    depends_on:
+      kokoro:
+        condition: service_healthy
