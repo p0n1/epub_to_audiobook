@@ -67,6 +67,11 @@ class EpubBookParser(BaseBookParser):
                 cleaned_text = re.sub(r'(?<=[a-zA-Z.,!?;”")])\d+', "", cleaned_text)
                 logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
+            # Removes references numbers like [1] or [2.3]
+            if self.config.remove_reference_numbers
+                cleaned_text = re.sub(r'\[\d+(\.\d+)?\]', '', cleaned_text)
+                logger.debug(f"Cleaned text step 4.1 (removed brackets): <{cleaned_text[:100]}>")
+
             # Does user defined search and replaces
             for search_and_replace in search_and_replaces:
                 cleaned_text = re.sub(search_and_replace['search'], search_and_replace['replace'], cleaned_text)
