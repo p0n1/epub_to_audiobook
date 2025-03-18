@@ -32,11 +32,18 @@ services:
     environment:
       - PIPER_HOST=piper
       - PIPER_PORT=10200
+      - PATH_TO_EPUB_FILE=${PATH_TO_EPUB_FILE}
+      - OUTPUT_DIR=${OUTPUT_DIR}
     volumes:
       - ./:/app
-      - <path/to/epub/dir/on/host>:/epub_src # Map the top level epub directory on the host machine
+      - ${PATH_TO_EPUB_FILE}:/epub_src # Map the top level epub directory on the host machine
     # command: tail -f /dev/null # Uncomment this line to keep the container running, and run via connecting to it with `docker exec -it epub_to_audiobook /bin/bash`
-    command: "python main.py --tts piper_docker --no_prompt '/epub_src/<path/to/epub/file>' audiobook_output" # Run command directly when the containers start up
+    command: >
+      python main.py
+      "${PATH_TO_EPUB_FILE}"
+      "${OUTPUT_DIR}"
+      --tts piper_docker
+      --no_prompt
     depends_on:
       piper:
         condition: service_healthy

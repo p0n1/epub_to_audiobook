@@ -460,8 +460,7 @@ python3 main.py "path/to/book.epub" "path/to/output/folder" --tts piper --model_
    - In the `piper` container, set the `PIPER_VOICE` environment variable to the name of the model file you downloaded.
    - In the `piper` container, map the `volumes` to the location of the piper models on your system (if you used the provided directory described in step 2, you can leave this as is).
    - In the `epub_to_audiobook` container, update the `volumes` mapping from `<path/to/epub/dir/on/host>` to the actual path to the epub on your host machine.
-   - In the `epub_to_audiobook` container, modify the `command` to match the parameters you want to use for the conversion. Make sure to keep `python main.py --tts piper_docker --no_prompt` at the beginning of the command.
-4. Run `docker-compose -f docker-compose.piper-example.yml up` to start the conversion process. Note that the current config in the docker compose will automatically start the process, entirely in the container. If you want to run the main python process outside the container, you can uncomment the command `command: tail -f /dev/null`, and use `docker exec -it epub_to_audiobook /bin/bash` to connect to the container and run the python script manually (see comments in the  [docker compose file](./docker-compose.piper-example.yml) for more details).
+4. From the root of the repo, run `PATH_TO_EPUB_FILE=./Your_epub_file.epub OUTPUT_DIR=$(pwd)/path/to/audiobook_output docker compose -f docker-compose.piper-example.yml up --build`, **replacing the placeholder values and output dirs with your desired epub source and audio output respectively**.  (Leave in the $(pwd) !)  Note that the current config in the docker compose will automatically start the process, entirely in the container. If you want to run the main python process outside the container, you can uncomment the command `command: tail -f /dev/null`, and use `docker exec -it epub_to_audiobook /bin/bash` to connect to the container and run the python script manually (see comments in the  [docker compose file](./docker-compose.piper-example.yml) for more details).
 
 ### Examples using Kokoro TTS
 
@@ -484,15 +483,19 @@ Then in another tab, run
 ```bash
 export OPENAI_BASE_URL=http://localhost:8880/v1
 export OPENAI_API_KEY="fake"
-python main.py path/to/epub output-dir --tts openai --voice_name "af_bella(3)+af_alloy(1)"
+python main.py path/to/epub output-dir --tts openai --voice_name "af_bella(3)+af_alloy(1)" #you can replace this with any other voice name. Link below.
 ```
 
-Alternatively, you can do the entire set up through docker compose using the [docker compose file set up for kokoro](./docker-compose.kokoro-example.yml)
+Alternatively, you can do the entire set up through docker compose using the [docker compose file set up for kokoro](./docker-compose.kokoro-example.yml).
+
 To do so, open the file with your favorite editor and then:
-- In the `epub_to_audiobook` container, update the `volumes` mapping from `<path/to/epub/dir/on/host>` to the actual path to the epub on your host machine.
-   - In the `epub_to_audiobook` container, modify the `command` to match the parameters you want to use for the conversion. Make sure to keep `--tts openai --no_prompt` within the command.
-- If desired, update the --voice_name to be something else if you prefer a different voice. A list of voices can be found [here](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md), and you can sample what they sound like [here](https://huggingface.co/spaces/hexgrad/Kokoro-TTS).
-- Run `docker-compose -f docker-compose.kokoro-example.yml up` to start the conversion process. Note that the current config in the docker compose will automatically start the process, entirely in the container. If you want to run the main python process outside the container, you can uncomment the command `command: tail -f /dev/null`, and use `docker exec -it epub_to_audiobook /bin/bash` to connect to the container and run the python script manually (see comments in the  [docker compose file](./docker-compose.kokoro-example.yml) for more details).
+
+- From the root of the repo, run `PATH_TO_EPUB_FILE=./Your_epub_file.epub OUTPUT_DIR=$(pwd)/path/to/audiobook_output VOICE_NAME=Your_desired_voice docker compose -f docker-compose.kokoro-example.yml up --build`, **replacing the placeholder values and output dirs with your desired epub source and audio output respectively, and your voice name**. 
+  -  A list of voices can be found [here](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md), and you can sample what they sound like [here](https://huggingface.co/spaces/hexgrad/Kokoro-TTS).
+- Note that the current config in the docker compose will automatically start the process, entirely in the container. If you want to run the main python process outside the container, you can uncomment the command `command: tail -f /dev/null`, and use `docker exec -it epub_to_audiobook /bin/bash` to connect to the container and run the python script manually (see comments in the  [docker compose file](./docker-compose.kokoro-example.yml) for more details).
+
+
+For more information on the image used for kokoro tts, visit this [repo](https://github.com/remsky/Kokoro-FastAPI).
 
 ## Troubleshooting
 

@@ -31,11 +31,20 @@ services:
     environment:
       - OPENAI_BASE_URL=http://kokoro:8880/v1
       - OPENAI_API_KEY=nope
+      - PATH_TO_EPUB_FILE=${PATH_TO_EPUB_FILE}
+      - OUTPUT_DIR=${OUTPUT_DIR:-audiobook_output}
+      - VOICE_NAME=${VOICE_NAME:-af_bella}
     volumes:
       - ./:/app
-      - ./<path_to_epub_file>:/epub_src 
+      - ${PATH_TO_EPUB_FILE}:/epub_src 
     #command: tail /dev/null # Uncomment this line to keep the container running, and run via connecting to it with `docker exec -it epub_to_audiobook /bin/bash`
-    command: "python main.py '<path_to_epub_file>' '<output_dir>' --tts openai --no_prompt --voice_name 'af_bella'"  # Run command directly when the containers start up
+    command: >
+      python main.py
+      "${PATH_TO_EPUB_FILE}"
+      "${OUTPUT_DIR}"
+      --tts openai
+      --no_prompt
+      --voice_name '${VOICE_NAME}'
     depends_on:
       kokoro:
         condition: service_healthy
