@@ -173,6 +173,11 @@ options:
   --model_name MODEL_NAME
                         Various TTS providers has different neural model names
 
+openai specific:
+  --speed SPEED         The speed of the generated audio. Select a value from 0.25 to 4.0. 1.0 is the default.
+  --instructions INSTRUCTIONS
+                        Instructions for the TTS model. Only supported for 'gpt-4o-mini-tts' model.
+
 edge specific:
   --voice_rate VOICE_RATE
                         Speaking rate of the text. Valid relative values range

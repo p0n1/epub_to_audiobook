@@ -30,7 +30,7 @@ class TestOpenAiTtsProvider(unittest.TestCase):
         config.output_format = None
         tts_provider = get_tts_provider(config)
         self.assertIsInstance(tts_provider, OpenAITTSProvider)
-        self.assertEqual(tts_provider.config.model_name, "tts-1")
+        self.assertEqual(tts_provider.config.model_name, "gpt-4o-mini-tts")
         self.assertEqual(tts_provider.config.voice_name, "alloy")
         self.assertEqual(tts_provider.config.output_format, "mp3")
 

@@ -98,6 +98,19 @@ def handle_args():
         help="Various TTS providers has different neural model names",
     )
 
+    openai_tts_group = parser.add_argument_group(title="openai specific")
+    openai_tts_group.add_argument(
+        "--speed",
+        default=1.0,
+        type=float,
+        help="The speed of the generated audio. Select a value from 0.25 to 4.0. 1.0 is the default.",
+    )
+
+    openai_tts_group.add_argument(
+        "--instructions",
+        help="Instructions for the TTS model. Only supported for 'gpt-4o-mini-tts' model.",
+    )
+
     edge_tts_group = parser.add_argument_group(title="edge specific")
     edge_tts_group.add_argument(
         "--voice_rate",

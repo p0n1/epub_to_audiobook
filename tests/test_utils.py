@@ -38,6 +38,7 @@ def get_openai_config():
         language='en-US',
         voice_name='echo',
         output_format='mp3',
-        model_name='tts-1'
+        model_name='tts-1',
+        speed=1.0
     )
     return GeneralConfig(args)
