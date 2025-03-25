@@ -68,7 +68,7 @@ class EpubBookParser(BaseBookParser):
                 logger.debug(f"Cleaned text step 4: <{cleaned_text[:100]}>")
 
             # Removes references numbers like [1] or [2.3]
-            if self.config.remove_reference_numbers
+            if self.config.remove_reference_numbers:
                 cleaned_text = re.sub(r'\[\d+(\.\d+)?\]', '', cleaned_text)
                 logger.debug(f"Cleaned text step 4.1 (removed brackets): <{cleaned_text[:100]}>")
 
