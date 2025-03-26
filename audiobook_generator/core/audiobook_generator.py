@@ -25,6 +25,28 @@ def get_total_chars(chapters):
     return total_characters
 
 
+def init_worker_process(log_level):
+    """Initialize logging in worker processes."""
+    # Create a custom formatter with worker ID
+    formatter = logging.Formatter(
+        "%(asctime)s - [Worker-%(process)d] - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
+    )
+
+    # Create a stream handler (prints to console)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    # Configure the root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    
+    # Remove existing handlers to prevent duplicate logs
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    
+    root_logger.addHandler(console_handler)
+
+
 class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
@@ -120,7 +142,11 @@ class AudiobookGenerator:
             )
 
             # Use multiprocessing to process chapters in parallel
-            with multiprocessing.Pool(processes=self.config.worker_count) as pool:
+            with multiprocessing.Pool(
+                processes=self.config.worker_count,
+                initializer=init_worker_process,
+                initargs=(self.config.log,)
+            ) as pool:
                 pool.starmap(self.process_chapter, tasks)
 
             logger.info(f"All chapters converted. 🎉🎉🎉")
