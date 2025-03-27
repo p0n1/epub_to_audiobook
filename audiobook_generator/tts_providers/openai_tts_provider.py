@@ -94,10 +94,6 @@ class OpenAITTSProvider(BaseTTSProvider):
     def validate_config(self):
         if self.config.output_format not in get_supported_formats():
             raise ValueError(f"OpenAI: Unsupported output format: {self.config.output_format}")
-        if self.config.voice_name not in get_supported_voices():
-            raise ValueError(f"OpenAI: Unsupported voice name: {self.config.voice_name}")
-        if self.config.model_name not in get_supported_models():
-            raise ValueError(f"OpenAI: Unsupported model name: {self.config.model_name}")
         if self.config.speed < 0.25 or self.config.speed > 4.0:
             raise ValueError(f"OpenAI: Unsupported speed: {self.config.speed}")
         if self.config.instructions and len(self.config.instructions) > 0 and self.config.model_name != "gpt-4o-mini-tts":
