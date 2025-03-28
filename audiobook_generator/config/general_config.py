@@ -25,6 +25,10 @@ class GeneralConfig:
         self.output_format = args.output_format
         self.model_name = args.model_name
 
+        # OpenAI specific arguments
+        self.instructions = args.instructions
+        self.speed = args.speed
+
         # TTS provider: Azure & Edge TTS specific arguments
         self.break_duration = args.break_duration
 

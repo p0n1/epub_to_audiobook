@@ -16,15 +16,34 @@ logger = logging.getLogger(__name__)
 def get_supported_formats():
     return ["mp3", "aac", "flac", "opus", "wav"]
 
+def get_supported_voices():
+    return ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse"]
+
+def get_supported_models():
+    return ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
+
+def get_price(model):
+    # https://platform.openai.com/docs/pricing#transcription-and-speech-generation
+    if model == "tts-1": # $15 per 1 mil chars
+        return 0.015
+    elif model == "tts-1-hd": # $30 per 1 mil chars
+        return 0.03
+    elif model == "gpt-4o-mini-tts": # $12 per 1 mil tokens (not chars, as 1 token is ~4 chars)
+        return 0.003
+    else:
+        logger.warning(f"OpenAI: Unsupported model name: {model}, unable to retrieve the price")
+        return 0.0
+
 
 class OpenAITTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
-        config.model_name = config.model_name or "tts-1"
+        config.model_name = config.model_name or "gpt-4o-mini-tts" # default to this model as it's the cheapest
         config.voice_name = config.voice_name or "alloy"
+        config.speed = config.speed or 1.0
+        config.instructions = config.instructions or None
         config.output_format = config.output_format or "mp3"
 
-        # per 1000 characters (0.03$ for HD model, 0.015$ for standard model)
-        self.price = 0.03 if config.model_name == "tts-1-hd" else 0.015
+        self.price = get_price(config.model_name)
         super().__init__(config)
 
         self.client = OpenAI()  # User should set OPENAI_API_KEY environment variable
@@ -53,6 +72,8 @@ class OpenAITTSProvider(BaseTTSProvider):
             response = self.client.audio.speech.create(
                 model=self.config.model_name,
                 voice=self.config.voice_name,
+                speed=self.config.speed,
+                instructions=self.config.instructions,
                 input=chunk,
                 response_format=self.config.output_format,
             )
@@ -74,6 +95,10 @@ class OpenAITTSProvider(BaseTTSProvider):
     def validate_config(self):
         if self.config.output_format not in get_supported_formats():
             raise ValueError(f"OpenAI: Unsupported output format: {self.config.output_format}")
+        if self.config.speed < 0.25 or self.config.speed > 4.0:
+            raise ValueError(f"OpenAI: Unsupported speed: {self.config.speed}")
+        if self.config.instructions and len(self.config.instructions) > 0 and self.config.model_name != "gpt-4o-mini-tts":
+            raise ValueError(f"OpenAI: Instructions are only supported for 'gpt-4o-mini-tts' model")
 
     def estimate_cost(self, total_chars):
         return math.ceil(total_chars / 1000) * self.price
