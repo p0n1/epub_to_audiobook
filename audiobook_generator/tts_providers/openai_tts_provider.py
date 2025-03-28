@@ -31,7 +31,8 @@ def get_price(model):
     elif model == "gpt-4o-mini-tts": # $12 per 1 mil tokens (not chars, as 1 token is ~4 chars)
         return 0.003
     else:
-        raise ValueError(f"OpenAI: Unsupported model name: {model}")
+        logger.warning(f"OpenAI: Unsupported model name: {model}, unable to retrieve the price")
+        return 0.0
 
 
 class OpenAITTSProvider(BaseTTSProvider):
