@@ -85,7 +85,7 @@ class EpubBookParser(BaseBookParser):
                     if soup.find(level):
                         title = soup.find(level).text
                         break
-                if title == "" or re.match(r'^\d{1,3}$',title) is not None:
+                if title.strip() == "" or re.match(r'^\d{1,3}$',title) is not None:
                     title = cleaned_text[:60]
             elif self.config.title_mode == "tag_text":
                 title = ""
@@ -94,7 +94,7 @@ class EpubBookParser(BaseBookParser):
                     if soup.find(level):
                         title = soup.find(level).text
                         break
-                if title == "":
+                if title.strip() == "":
                     title = "<blank>"
             elif self.config.title_mode == "first_few":
                 title = cleaned_text[:60]
