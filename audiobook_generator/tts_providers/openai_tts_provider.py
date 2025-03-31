@@ -29,7 +29,7 @@ def get_price(model):
     elif model == "tts-1-hd": # $30 per 1 mil chars
         return 0.03
     elif model == "gpt-4o-mini-tts": # $12 per 1 mil tokens (not chars, as 1 token is ~4 chars)
-        return 0.003
+        return 0.003 # TODO: this could be very wrong for Chinese. Not sure how openai calculates the audio token count.
     else:
         logger.warning(f"OpenAI: Unsupported model name: {model}, unable to retrieve the price")
         return 0.0
@@ -52,7 +52,10 @@ class OpenAITTSProvider(BaseTTSProvider):
         return super().__str__()
 
     def text_to_speech(self, text: str, output_file: str, audio_tags: AudioTags):
-        max_chars = 4000  # should be less than 4096 for OpenAI
+        # Reason: The max num of input tokens is 2000 for gpt-4o-mini-tts https://platform.openai.com/docs/models/gpt-4o-mini-tts. One token is ~4 chars in English but ~1 word/char in Chinese.
+        # So we reduce the max num of chars from 4000 to 1800 to avoid the input tokens limit.
+        # TODO: detect the language and set the max num of chars accordingly.
+        max_chars = 1800
 
         text_chunks = split_text(text, max_chars, self.config.language)
 
