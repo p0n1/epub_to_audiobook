@@ -54,10 +54,11 @@ class AudiobookGenerator:
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def process_chapter(self, idx, title, text, book_parser, tts_provider):
+    def process_chapter(self, idx, title, text, book_parser):
         """Process a single chapter: write text (if needed) and convert to audio."""
         try:
             logger.info(f"Processing chapter {idx}: {title}")
+            tts_provider = get_tts_provider(self.config)
 
             # Save chapter text if required
             if self.config.output_text:
@@ -67,7 +68,7 @@ class AudiobookGenerator:
 
             # Skip audio generation in preview mode
             if self.config.preview:
-                return
+                return True
 
             # Generate audio file
             output_file = os.path.join(
@@ -80,9 +81,16 @@ class AudiobookGenerator:
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
             logger.info(f"✅ Converted chapter {idx}: {title}")
-        except Exception:
-            logger.exception(f"Error processing chapter {idx}")
-            raise
+
+            return True
+        except Exception as e:
+            logger.exception(f"Error processing chapter {idx}, error: {e}")
+            return False
+
+    def process_chapter_wrapper(self, args):
+        """Wrapper for process_chapter to handle unpacking args for imap."""
+        idx, title, text, book_parser = args
+        return idx, self.process_chapter(idx, title, text, book_parser)
 
     def run(self):
         try:
@@ -134,12 +142,15 @@ class AudiobookGenerator:
 
             # Prepare chapters for processing
             chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
-            tasks = (
-                (idx, title, text, book_parser, tts_provider)
+            tasks = [
+                (idx, title, text, book_parser)
                 for idx, (title, text) in enumerate(
                     chapters_to_process, start=self.config.chapter_start
                 )
-            )
+            ]
+
+            # Track failed chapters
+            failed_chapters = []
 
             # Use multiprocessing to process chapters in parallel
             with multiprocessing.Pool(
@@ -147,9 +158,22 @@ class AudiobookGenerator:
                 initializer=init_worker_process,
                 initargs=(self.config.log,)
             ) as pool:
-                pool.starmap(self.process_chapter, tasks)
+                # Process chapters and collect results
+                results = list(pool.imap_unordered(self.process_chapter_wrapper, tasks))
+                
+                # Check for failed chapters
+                for idx, success in results:
+                    if not success:
+                        chapter_title = chapters_to_process[idx - self.config.chapter_start][0]
+                        failed_chapters.append((idx, chapter_title))
 
-            logger.info(f"All chapters converted. 🎉🎉🎉")
+            if failed_chapters:
+                logger.warning(f"The following chapters failed to convert:")
+                for idx, title in failed_chapters:
+                    logger.warning(f"  - Chapter {idx}: {title}")
+                logger.info(f"Conversion completed with {len(failed_chapters)} failed chapters.")
+            else:
+                logger.info(f"All chapters converted successfully. 🎉🎉🎉")
 
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
