@@ -497,7 +497,7 @@ Then in another tab, run
 ```bash
 export OPENAI_BASE_URL=http://localhost:8880/v1
 export OPENAI_API_KEY="fake"
-python main.py path/to/epub output-dir --tts openai --voice_name "af_bella(3)+af_alloy(1)" #you can replace this with any other voice name. Link below.
+python main.py path/to/epub output-dir --tts openai --voice_name "af_bella(3)+af_alloy(1) --model_name tts-1" #you can replace this with any other voice name. Link below. Also note that model_name tts-1 is required since kokoro breaks with the current default model_name value.
 ```
 
 Alternatively, you can do the entire set up through docker compose using the [docker compose file set up for kokoro](./docker-compose.kokoro-example.yml).
