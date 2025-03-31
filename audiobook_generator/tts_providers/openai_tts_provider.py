@@ -29,7 +29,7 @@ def get_price(model):
     elif model == "tts-1-hd": # $30 per 1 mil chars
         return 0.03
     elif model == "gpt-4o-mini-tts": # $12 per 1 mil tokens (not chars, as 1 token is ~4 chars)
-        return 0.003
+        return 0.003 # TODO: this could be very wrong for Chinese. Not sure how openai calculates the audio token count.
     else:
         logger.warning(f"OpenAI: Unsupported model name: {model}, unable to retrieve the price")
         return 0.0
