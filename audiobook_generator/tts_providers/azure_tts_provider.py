@@ -22,6 +22,9 @@ class AzureTTSProvider(BaseTTSProvider):
         # TTS provider specific config
         config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
+        config.voice_rate = config.voice_rate or "+0%"  # Default value for rate
+        config.voice_volume = config.voice_volume or "+0%"  # Default value for volume
+        config.voice_pitch = config.voice_pitch or "+0Hz"  # Default value for pitch
 
         # 16$ per 1 million characters
         # or 0.016$ per 1000 characters
@@ -109,7 +112,12 @@ class AzureTTSProvider(BaseTTSProvider):
             logger.info(
                 f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {len(text_chunks)}"
             )
-            ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.config.voice_name}'>{escaped_text}</voice></speak>"
+            ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'>" \
+                   f"<voice name='{self.config.voice_name}' " \
+                   f"rate='{self.config.voice_rate}' " \
+                   f"volume='{self.config.voice_volume}' " \
+                   f"pitch='{self.config.voice_pitch}'>" \
+                   f"{escaped_text}</voice></speak>"
             logger.debug(f"SSML: [{ssml}]")
 
             for retry in range(MAX_RETRIES):
