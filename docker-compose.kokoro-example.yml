@@ -44,6 +44,7 @@ services:
       "${OUTPUT_DIR}"
       --tts openai
       --no_prompt
+      --model_name tts-1
       --voice_name '${VOICE_NAME}'
     depends_on:
       kokoro:
