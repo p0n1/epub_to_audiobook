@@ -49,7 +49,7 @@ class OpenAITTSProvider(BaseTTSProvider):
         self.price = get_price(config.model_name)
         super().__init__(config)
 
-        self.client = OpenAI()  # User should set OPENAI_API_KEY environment variable
+        self.client = OpenAI(max_retries=4)  # User should set OPENAI_API_KEY environment variable
 
     def __str__(self) -> str:
         return super().__str__()
