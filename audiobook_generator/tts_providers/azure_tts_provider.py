@@ -20,7 +20,10 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
         # TTS provider specific config
-        config.voice_name = config.voice_name or "en-US-GuyNeural"
+        if config.language == "zh-CN":
+            config.voice_name = config.voice_name or "zh-CN-YunyeNeural"
+        else:
+            config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
 
         # 16$ per 1 million characters
