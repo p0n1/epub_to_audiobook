@@ -9,6 +9,7 @@ class GeneralConfig:
         self.no_prompt = args.no_prompt
         self.title_mode = args.title_mode
         self.worker_count = args.worker_count
+        self.use_pydub_merge = args.use_pydub_merge
 
         # Book parser specific arguments
         self.newline_mode = args.newline_mode

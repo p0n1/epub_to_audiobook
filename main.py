@@ -99,6 +99,18 @@ def handle_args():
     )
 
     parser.add_argument(
+        "--use_pydub_merge",
+        action="store_true",
+        help="Use pydub to merge audio segments of one chapter into single file instead of direct write. "
+        "Currently only supported for OpenAI and Azure TTS. "
+        "Direct write is faster but might skip audio segments if formats differ. "
+        "Pydub merge is slower but more reliable for different audio formats. It requires ffmpeg to be installed first. "
+        "You can use this option to avoid the issue of skipping audio segments in some cases. "
+        "However, it's recommended to use direct write for most cases as it's faster. "
+        "Only use this option if you encounter issues with direct write.",
+    )
+
+    parser.add_argument(
         "--voice_name",
         help="Various TTS providers has different voice names, look up for your provider settings.",
     )
