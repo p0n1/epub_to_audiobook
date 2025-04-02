@@ -9,7 +9,7 @@ import requests
 
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.config.general_config import GeneralConfig
-from audiobook_generator.core.utils import split_text, set_audio_tags
+from audiobook_generator.core.utils import split_text, set_audio_tags, merge_audio_segments
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,10 @@ MAX_RETRIES = 12  # Max_retries constant for network errors
 class AzureTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
         # TTS provider specific config
-        config.voice_name = config.voice_name or "en-US-GuyNeural"
+        if config.language == "zh-CN":
+            config.voice_name = config.voice_name or "zh-CN-YunyeNeural"
+        else:
+            config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
 
         # 16$ per 1 million characters
@@ -94,10 +97,14 @@ class AzureTTSProvider(BaseTTSProvider):
         text_chunks = split_text(text, max_chars, self.config.language)
 
         audio_segments = []
-
+        chunk_ids = []
         for i, chunk in enumerate(text_chunks, 1):
+            chunk_id = f"chapter-{audio_tags.idx}_{audio_tags.title}_chunk_{i}_of_{len(text_chunks)}"
+            logger.info(
+                f"Processing {chunk_id}, length={len(chunk)}"
+            )
             logger.debug(
-                f"Processing chunk {i} of {len(text_chunks)}, length={len(chunk)}, text=[{chunk}]"
+                f"Processing {chunk_id}, length={len(chunk)}, text=[{chunk}]"
             )
             escaped_text = html.escape(chunk)
             logger.debug(f"Escaped text: [{escaped_text}]")
@@ -106,9 +113,6 @@ class AzureTTSProvider(BaseTTSProvider):
                 self.get_break_string().strip(),
                 f" <break time='{self.config.break_duration}ms' /> ",
             )  # strip in case leading bank is missing
-            logger.info(
-                f"Processing chapter-{audio_tags.idx} <{audio_tags.title}>, chunk {i} of {len(text_chunks)}"
-            )
             ssml = f"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='{self.config.language}'><voice name='{self.config.voice_name}'>{escaped_text}</voice></speak>"
             logger.debug(f"SSML: [{ssml}]")
 
@@ -133,6 +137,7 @@ class AzureTTSProvider(BaseTTSProvider):
                         + str(len(response.content))
                     )
                     audio_segments.append(io.BytesIO(response.content))
+                    chunk_ids.append(chunk_id)
                     break
                 except requests.exceptions.RequestException as e:
                     logger.warning(
@@ -144,10 +149,8 @@ class AzureTTSProvider(BaseTTSProvider):
                     else:
                         raise e
 
-        with open(output_file, "wb") as outfile:
-            for segment in audio_segments:
-                segment.seek(0)
-                outfile.write(segment.read())
+        # Use utility function to merge audio segments
+        merge_audio_segments(audio_segments, output_file, self.get_output_file_extension(), chunk_ids, self.config.use_pydub_merge)
 
         set_audio_tags(output_file, audio_tags)
 
