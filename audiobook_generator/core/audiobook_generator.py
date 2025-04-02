@@ -80,7 +80,7 @@ class AudiobookGenerator:
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
-            logger.info(f"✅ Converted chapter {idx}: {title}")
+            logger.info(f"✅ Converted chapter {idx}: {title}, output file: {output_file}")
 
             return True
         except Exception as e:
