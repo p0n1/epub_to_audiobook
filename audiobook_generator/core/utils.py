@@ -106,7 +106,7 @@ def split_long_sentence(sentence: str, max_chars: int) -> List[str]:
         '：', ':',  # Colons
         '）', ')', ']', '】', '}', '」', '』',  # Closing parentheses and brackets
         '、',  # Chinese enumeration comma
-        '—', '-', '–', '—',  # Dashes
+        '—', '-', '–',  # Dashes
         ' ',  # Spaces as last resort
     ]
     
