@@ -1,11 +1,11 @@
 import argparse
-import logging
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
 from audiobook_generator.tts_providers.base_tts_provider import (
     get_supported_tts_providers,
 )
+from audiobook_generator.utils.log_handler import setup_logging
 
 
 def handle_args():
@@ -170,6 +170,11 @@ def handle_args():
         help="Path to the Piper TTS executable",
     )
     piper_tts_group.add_argument(
+        "--piper_docker_image",
+        default="lscr.io/linuxserver/piper:latest",
+        help="Piper Docker image name (if using Docker)",
+    )
+    piper_tts_group.add_argument(
         "--piper_speaker",
         default=0,
         help="Piper speaker id, used for multi-speaker models",
@@ -189,26 +194,10 @@ def handle_args():
     return GeneralConfig(args)
 
 
-def setup_logging(log_level):
-    # Create a custom formatter
-    formatter = logging.Formatter(
-        "%(asctime)s - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
-    )
-
-    # Create a stream handler (prints to console)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Configure the root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-    root_logger.addHandler(console_handler)
-
-
-def main():
-    config = handle_args()
-
-    setup_logging(config.log)
+def main(config=None, log_file=None):
+    if not config: # config passed from UI, or uses args if CLI
+        config = handle_args()
+    setup_logging(config.log, log_file)
 
     AudiobookGenerator(config).run()
 

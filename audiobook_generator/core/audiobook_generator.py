@@ -6,6 +6,7 @@ from audiobook_generator.book_parsers.base_book_parser import get_book_parser
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
+from audiobook_generator.utils.log_handler import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -23,28 +24,6 @@ def get_total_chars(chapters):
     for title, text in chapters:
         total_characters += len(text)
     return total_characters
-
-
-def init_worker_process(log_level):
-    """Initialize logging in worker processes."""
-    # Create a custom formatter with worker ID
-    formatter = logging.Formatter(
-        "%(asctime)s - [Worker-%(process)d] - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
-    )
-
-    # Create a stream handler (prints to console)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Configure the root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-    
-    # Remove existing handlers to prevent duplicate logs
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    
-    root_logger.addHandler(console_handler)
 
 
 class AudiobookGenerator:
@@ -86,6 +65,7 @@ class AudiobookGenerator:
 
     def run(self):
         try:
+            logger.info("Starting audiobook generation...")
             book_parser = get_book_parser(self.config)
             tts_provider = get_tts_provider(self.config)
 
@@ -120,9 +100,9 @@ class AudiobookGenerator:
             total_characters = get_total_chars(
                 chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             )
-            logger.info(f"✨ Total characters in selected book chapters: {total_characters} ✨")
+            logger.info(f"Total characters in selected book chapters: {total_characters}")
             rough_price = tts_provider.estimate_cost(total_characters)
-            print(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
+            logger.info(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
 
             # Prompt user to continue if not in preview mode
             if self.config.no_prompt:
@@ -144,12 +124,12 @@ class AudiobookGenerator:
             # Use multiprocessing to process chapters in parallel
             with multiprocessing.Pool(
                 processes=self.config.worker_count,
-                initializer=init_worker_process,
-                initargs=(self.config.log,)
+                initializer=setup_logging,
+                initargs=(self.config.log, self.config.log_file, True)
             ) as pool:
                 pool.starmap(self.process_chapter, tasks)
 
-            logger.info(f"All chapters converted. 🎉🎉🎉")
+            logger.info(f"All chapters converted.")
 
         except KeyboardInterrupt:
             logger.info("Job stopped by user.")
