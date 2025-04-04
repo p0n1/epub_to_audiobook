@@ -9,3 +9,4 @@ wyoming==1.6.0
 httpx==0.28.1
 gradio==5.23.1
 docker==7.1.0
+sentencex==0.6.1

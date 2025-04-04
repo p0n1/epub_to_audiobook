@@ -9,6 +9,7 @@ class GeneralConfig:
         self.log_file = None
         self.no_prompt = getattr(args, 'no_prompt', None)
         self.worker_count = getattr(args, 'worker_count', None)
+        self.use_pydub_merge = getattr(args, 'use_pydub_merge', None)
 
         # Book parser specific arguments
         self.title_mode = getattr(args, 'title_mode', None)

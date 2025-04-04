@@ -125,7 +125,10 @@ class CommWithPauses:
 class EdgeTTSProvider(BaseTTSProvider):
     def __init__(self, config: GeneralConfig):
         # TTS provider specific config
-        config.voice_name = config.voice_name or "en-US-GuyNeural"
+        if config.language == "zh-CN":
+            config.voice_name = config.voice_name or "zh-CN-YunxiNeural"
+        else:
+            config.voice_name = config.voice_name or "en-US-GuyNeural"
         config.output_format = config.output_format or "audio-24khz-48kbitrate-mono-mp3"
         config.voice_rate = config.voice_rate or "+0%"
         config.voice_volume = config.voice_volume or "+0%"
