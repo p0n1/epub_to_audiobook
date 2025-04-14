@@ -531,7 +531,7 @@ Also check [this](https://github.com/p0n1/epub_to_audiobook/issues/85) if you're
 ## Related Projects
 
 - [Epub to Audiobook (M4B)](https://github.com/duplaja/epub-to-audiobook-hf): Epub to MB4 Audiobook, with StyleTTS2 via HuggingFace Spaces API.
-- [Storyteller](https://smoores.gitlab.io/storyteller/): A self-hosted platform for automatically syncing ebooks and audiobooks.
+- [Storyteller](https://storyteller-platform.gitlab.io/storyteller/): A self-hosted platform for automatically syncing ebooks and audiobooks.
 
 ## License
 
