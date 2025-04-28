@@ -1,7 +1,6 @@
 import datetime
 from multiprocessing import Process
 from pathlib import Path
-from tkinter import Tk, filedialog
 from typing import Optional
 
 import gradio as gr
@@ -22,18 +21,6 @@ selected_tts = "OpenAI"
 running_process: Optional[Process] = None
 log_file = None
 delayed_log_read_counter = 0
-
-def get_folder_path():
-    root = Tk()
-    root.withdraw()
-    output_dir = filedialog.askdirectory()
-    return output_dir
-
-def get_file_path(custom_type_limitation: tuple):
-    root = Tk()
-    root.withdraw()
-    file_path = filedialog.askopenfilename(filetypes=(custom_type_limitation, ("All files", "*.*")))
-    return file_path
 
 def on_tab_change(evt: gr.SelectData):
     print(f"{evt.value} tab selected")
@@ -70,7 +57,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
                     piper_noice_scale, piper_noice_w_scale, piper_length_scale, piper_sentence_silence):
 
     config = GeneralConfig(None)
-    config.input_file = input_file
+    config.input_file = input_file.name if hasattr(input_file, 'name') else input_file
     config.output_folder = output_dir
     config.preview = preview
     config.output_text = output_text
@@ -84,7 +71,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
     config.chapter_end = chapter_end
     config.remove_endnotes = remove_endnotes
     config.remove_reference_numbers = remove_reference_numbers
-    config.search_and_replace_file = search_and_replace_file
+    config.search_and_replace_file = search_and_replace_file.name if hasattr(search_and_replace_file, 'name') else search_and_replace_file
 
     global selected_tts
     if selected_tts == "OpenAI":
@@ -109,6 +96,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.voice_rate = edge_voice_rate
         config.voice_volume = edge_volume
         config.voice_pitch = edge_pitch
+        config.break_duration = break_duration
     elif selected_tts == "Piper":
         config.tts = "piper"
         config.piper_path = piper_executable_path
@@ -166,14 +154,12 @@ def host_ui(config):
     with gr.Blocks() as ui:
         with gr.Row(equal_height=True):
             with gr.Column():
-                input_file = gr.Textbox(label="Select the book file to process", interactive=True)
-                gr.Button("Browse").click(fn=lambda: get_file_path(("EPUB file", "*.epub")), outputs=input_file)
+                input_file = gr.File(label="Select the book file to process", file_types=[".epub"], 
+                                    file_count="single", interactive=True)
 
             with gr.Column():
                 output_dir = gr.Textbox(label="Select Output Directory", placeholder="./audiobook_output",
                                         interactive=True)
-                gr.Button("Browse").click(get_folder_path, outputs=output_dir)
-
 
             worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=4,
                                      info="Number of workers to use for processing. More workers may speed up the process but will use more resources.")
@@ -188,8 +174,8 @@ def host_ui(config):
         gr.Markdown("---")
         with gr.Row(equal_height=True):
             with gr.Column():
-                search_and_replace_file = gr.Textbox(label="Select search and replace file", interactive=True)
-                gr.Button("Browse").click(fn=lambda: get_file_path(("Text file", "*.txt")), outputs=input_file)
+                search_and_replace_file = gr.File(label="Select search and replace file", file_types=[".txt"], 
+                                                 file_count="single", interactive=True)
 
             title_mode = gr.Dropdown(["auto", "tag_text", "first_few"], label="Title Mode", value="auto",
                                      interactive=True, info="Choose the parse mode for chapter title.")
@@ -251,6 +237,8 @@ def host_ui(config):
                                             info="Volume level of the speaking voice.")
                     edge_pitch = gr.Slider(minimum=-100, maximum=100, step=1, label="Voice Pitch", value=0,
                                            info="Baseline pitch tone for the text.")
+                    break_duration = gr.Slider(minimum=1, maximum=5000, step=1, label="Break Duration", value=1250,
+                                               info="Break duration in milliseconds. Valid values range from 0 to 5000, default: 1250ms")
 
                     edge_language.change(
                         fn=get_edge_voices_by_language,
@@ -268,7 +256,13 @@ def host_ui(config):
                         local_group = gr.Group(visible=False)
                         with local_group:
                             piper_executable_path = gr.Textbox(label="Piper executable path", interactive=True)
-                            gr.Button("Browse").click(fn=lambda: get_file_path(("Piper executable", "*.exe")), outputs=piper_executable_path)
+                            piper_file_upload = gr.File(label="Upload Piper executable", file_types=[".exe"], 
+                                                      file_count="single", interactive=True)
+                            piper_file_upload.change(
+                                fn=lambda x: x.name if x else "",
+                                inputs=piper_file_upload,
+                                outputs=piper_executable_path
+                            )
 
                         docker_group = gr.Row(visible=True, equal_height=True)
                         with docker_group:
