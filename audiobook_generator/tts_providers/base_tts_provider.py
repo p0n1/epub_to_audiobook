@@ -6,7 +6,6 @@ TTS_AZURE = "azure"
 TTS_OPENAI = "openai"
 TTS_EDGE = "edge"
 TTS_PIPER = "piper"
-TTS_PIPER_DOCKER = "piper_docker"
 
 
 class BaseTTSProvider:  # Base interface for TTS providers
@@ -36,7 +35,7 @@ class BaseTTSProvider:  # Base interface for TTS providers
 
 # Common support methods for all TTS providers
 def get_supported_tts_providers() -> List[str]:
-    return [TTS_AZURE, TTS_OPENAI, TTS_EDGE, TTS_PIPER, TTS_PIPER_DOCKER]
+    return [TTS_AZURE, TTS_OPENAI, TTS_EDGE, TTS_PIPER]
 
 
 def get_tts_provider(config) -> BaseTTSProvider:
@@ -57,16 +56,8 @@ def get_tts_provider(config) -> BaseTTSProvider:
 
         return EdgeTTSProvider(config)
     elif config.tts == TTS_PIPER:
-        from audiobook_generator.tts_providers.piper_tts_provider import (
-            PiperTTSProvider,
-        )
+        from audiobook_generator.tts_providers.piper_tts_provider import PiperTTSProvider
 
         return PiperTTSProvider(config)
-    elif config.tts == TTS_PIPER_DOCKER:
-        from audiobook_generator.tts_providers.piper_docker_tts_provider import (
-            PiperDockerTTSProvider,
-        )
-
-        return PiperDockerTTSProvider(config)
     else:
         raise ValueError(f"Invalid TTS provider: {config.tts}")

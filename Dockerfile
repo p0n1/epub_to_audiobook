@@ -1,11 +1,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim-bookworm
 
-# Set the working directory inside the container
-WORKDIR /app_src
-
 # Install system dependencies
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
