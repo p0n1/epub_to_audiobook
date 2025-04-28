@@ -256,7 +256,7 @@ def host_ui(config):
                         local_group = gr.Group(visible=False)
                         with local_group:
                             piper_executable_path = gr.Textbox(label="Piper executable path", interactive=True)
-                            piper_file_upload = gr.File(label="Upload Piper executable", file_types=[".exe"], 
+                            piper_file_upload = gr.File(label="Upload Piper executable", 
                                                       file_count="single", interactive=True)
                             piper_file_upload.change(
                                 fn=lambda x: x.name if x else "",
