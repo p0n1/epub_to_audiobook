@@ -156,5 +156,9 @@ class AudiobookGenerator:
                 logger.info(f"All chapters converted successfully.")
 
         except KeyboardInterrupt:
-            logger.info("Job stopped by user.")
-            exit()
+            logger.info("Audiobook generation process interrupted by user (Ctrl+C).")
+        except Exception as e:
+            logger.exception(f"Error during audiobook generation: {e}")
+        finally:
+            logger.debug("AudiobookGenerator.run() method finished.")
+
