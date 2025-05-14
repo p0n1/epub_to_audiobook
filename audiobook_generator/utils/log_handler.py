@@ -1,4 +1,6 @@
 import logging
+import datetime
+from pathlib import Path
 
 def red_log_file(log_file):
     try:
@@ -34,3 +36,8 @@ def setup_logging(log_level, log_file=None, is_worker=False):
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
+
+def generate_unique_log_path(prefix: str) -> Path:
+    """Generates a unique log file path with a timestamp."""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    return Path(f"{prefix}_{timestamp}.log")

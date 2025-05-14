@@ -14,7 +14,7 @@ from audiobook_generator.tts_providers.openai_tts_provider import get_openai_sup
     get_openai_supported_voices, get_openai_instructions_example, get_openai_supported_output_formats
 from audiobook_generator.tts_providers.piper_tts_provider import get_piper_supported_languages, \
     get_piper_supported_voices, get_piper_supported_qualities, get_piper_supported_speakers
-from audiobook_generator.utils.log_handler import red_log_file
+from audiobook_generator.utils.log_handler import red_log_file, generate_unique_log_path
 from main import main
 
 selected_tts = "OpenAI"
@@ -118,13 +118,12 @@ def launch_audiobook_generator(config):
     if running_process and running_process.is_alive():
         return
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     global log_file
-    log_file = Path(f"EtA_{timestamp}.log")
+    log_file = generate_unique_log_path("EtA")
     log_file.touch()
     config.log_file = log_file
 
-    running_process = Process(target=main, args=(config,log_file.absolute()))
+    running_process = Process(target=main, args=(config, str(log_file.absolute())))
     running_process.start()
 
 

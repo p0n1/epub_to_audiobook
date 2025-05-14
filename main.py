@@ -1,11 +1,12 @@
 import argparse
+from pathlib import Path
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
 from audiobook_generator.tts_providers.base_tts_provider import (
     get_supported_tts_providers,
 )
-from audiobook_generator.utils.log_handler import setup_logging
+from audiobook_generator.utils.log_handler import setup_logging, generate_unique_log_path
 
 
 def handle_args():
@@ -209,7 +210,20 @@ def handle_args():
 def main(config=None, log_file=None):
     if not config: # config passed from UI, or uses args if CLI
         config = handle_args()
-    setup_logging(config.log, log_file)
+
+    if log_file:
+        # If log_file is provided (e.g., from UI), use it directly as a Path object.
+        # The UI passes an absolute path string.
+        effective_log_file = Path(log_file)
+    else:
+        # Otherwise (e.g., CLI usage without a specific log file from UI),
+        # generate a unique log file name.
+        effective_log_file = generate_unique_log_path("EtA")
+    
+    # Ensure config.log_file is updated, as it's used by AudiobookGenerator for worker processes.
+    config.log_file = effective_log_file
+
+    setup_logging(config.log, str(effective_log_file))
 
     AudiobookGenerator(config).run()
 
