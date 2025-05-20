@@ -166,7 +166,7 @@ def host_ui(config):
                 output_dir = gr.Textbox(label="Select Output Directory", placeholder="./audiobook_output",
                                         interactive=True)
 
-            worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=4,
+            worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=1,
                                      info="Number of workers to use for processing. More workers may speed up the process but will use more resources.")
             log_level = gr.Dropdown(["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"], label="Log Level",
                                     value="INFO", interactive=True)
