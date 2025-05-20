@@ -1,13 +1,14 @@
 import logging
 import datetime
 from pathlib import Path
+from typing import Optional
 
-def red_log_file(log_file):
+def red_log_file(log_file_path):
     try:
-        with open(log_file, "r") as log_file:
-            return log_file.read()
+        with open(log_file_path, "r") as f_handle:
+            return f_handle.read()
     except FileNotFoundError:
-        return f"Log file {log_file} not found."
+        return f"Log file {str(log_file_path)} not found."
 
 
 def get_formatter(is_worker):

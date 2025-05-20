@@ -119,9 +119,12 @@ def launch_audiobook_generator(config):
         return
 
     global log_file
+    global delayed_log_read_counter
     log_file = generate_unique_log_path("EtA")
     log_file.touch()
     config.log_file = log_file
+
+    delayed_log_read_counter = 0
 
     running_process = Process(target=main, args=(config, str(log_file.absolute())))
     running_process.start()
@@ -137,16 +140,18 @@ def read_logs(current_value):
     global delayed_log_read_counter
     global running_process
     global log_file
-    if not running_process:
+
+    if log_file is None:
         return current_value
 
-    if running_process.is_alive():
+    if running_process and running_process.is_alive():
+        delayed_log_read_counter = 0
         return red_log_file(log_file)
     else:
         if delayed_log_read_counter < 5:
             delayed_log_read_counter += 1
-            return red_log_file(log_file)
-        return current_value
+        
+        return red_log_file(log_file)
 
 
 def host_ui(config):
