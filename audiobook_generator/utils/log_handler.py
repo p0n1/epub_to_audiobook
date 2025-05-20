@@ -33,12 +33,19 @@ def setup_logging(log_level, log_file=None, is_worker=False):
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
-    if log_file:
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        root_logger.addHandler(file_handler)
+    if not log_file:
+        log_file = generate_unique_log_path("app") # Default prefix "app"
+
+    # Ensure the directory for the log file exists
+    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
 
 def generate_unique_log_path(prefix: str) -> Path:
     """Generates a unique log file path with a timestamp."""
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    return Path(f"{prefix}_{timestamp}.log")
+    log_dir = Path("logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir / f"{prefix}_{timestamp}.log"
