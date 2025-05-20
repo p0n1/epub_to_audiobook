@@ -135,6 +135,7 @@ def terminate_audiobook_generator():
     if running_process and running_process.is_alive():
         running_process.terminate()
         running_process = None
+        print("Audiobook generator terminated manually")
 
 def read_logs(current_value):
     global delayed_log_read_counter
