@@ -1,5 +1,7 @@
 from multiprocessing import Process
 from typing import Optional
+import os
+from datetime import datetime
 
 import gradio as gr
 from gradio_log import Log
@@ -128,6 +130,8 @@ def terminate_audiobook_generator():
         print("Audiobook generator terminated manually")
 
 def host_ui(config):
+    default_output_dir = os.path.join("audiobook_output", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    print(f"Default audiobook output directory: {default_output_dir}")
     with gr.Blocks() as ui:
         with gr.Row(equal_height=True):
             with gr.Column():
@@ -135,8 +139,7 @@ def host_ui(config):
                                     file_count="single", interactive=True)
 
             with gr.Column():
-                output_dir = gr.Textbox(label="Select Output Directory", placeholder="./audiobook_output",
-                                        interactive=True)
+                output_dir = gr.Textbox(label="Set Output Directory", value=default_output_dir, interactive=True)
 
             worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=1,
                                      info="Number of workers to use for processing. More workers may speed up the process but will use more resources.")
