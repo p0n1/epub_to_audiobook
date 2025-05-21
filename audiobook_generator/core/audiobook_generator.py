@@ -114,9 +114,9 @@ class AudiobookGenerator:
 
             # Prompt user to continue if not in preview mode
             if self.config.no_prompt:
-                logger.info(f"Skipping prompt as passed parameter no_prompt")
+                logger.info("Skipping prompt as passed parameter no_prompt")
             elif self.config.preview:
-                logger.info(f"Skipping prompt as in preview mode")
+                logger.info("Skipping prompt as in preview mode")
             else:
                 confirm_conversion()
 
@@ -148,12 +148,12 @@ class AudiobookGenerator:
                         failed_chapters.append((idx, chapter_title))
 
             if failed_chapters:
-                logger.warning(f"The following chapters failed to convert:")
+                logger.warning("The following chapters failed to convert:")
                 for idx, title in failed_chapters:
                     logger.warning(f"  - Chapter {idx}: {title}")
-                logger.info(f"Conversion completed with {len(failed_chapters)} failed chapters.")
+                logger.info(f"Conversion completed with {len(failed_chapters)} failed chapters. Check your output directory: {self.config.output_folder} and log file: {self.config.log_file} for more details.")
             else:
-                logger.info(f"All chapters converted successfully.")
+                logger.info(f"All chapters converted successfully. Check your output directory: {self.config.output_folder}")
 
         except KeyboardInterrupt:
             logger.info("Audiobook generation process interrupted by user (Ctrl+C).")
