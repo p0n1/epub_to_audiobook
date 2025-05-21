@@ -139,22 +139,23 @@ def host_ui(config):
                                     file_count="single", interactive=True)
 
             with gr.Column():
-                output_dir = gr.Textbox(label="Set Output Directory", value=default_output_dir, interactive=True)
+                output_dir = gr.Textbox(label="Set Output Directory", value=default_output_dir, interactive=True, info="Default one should be fine.")
+                log_level = gr.Dropdown(["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"], label="Log Level", value="INFO", interactive=True)
 
-            worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=1,
-                                     info="Number of workers to use for processing. More workers may speed up the process but will use more resources.")
-            log_level = gr.Dropdown(["INFO", "DEBUG", "WARNING", "ERROR", "CRITICAL"], label="Log Level",
-                                    value="INFO", interactive=True)
+            with gr.Column():
+                worker_count = gr.Slider(minimum=1, maximum=8, step=1, label="Worker Count", value=1,
+                                     info="Number of workers to use for processing. More workers may speed up the process but will use more resources or cause instability. ***Only change if you know how to debug potential issues.***")
+
             with gr.Column():
                 output_text = gr.Checkbox(label="Enable Output Text", value=False,
                                       info="Export a plain text file for each chapter.")
                 preview = gr.Checkbox(label="Enable Preview Mode", value=False,
-                                  info="It will not convert the to audio, only prepare chapters and cost.")
+                                  info="It will not convert the to audio, only prepare chapters and cost. Recommended to toggle on when testing book parsing ***without*** audio generation.")
 
         gr.Markdown("---")
         with gr.Row(equal_height=True):
             with gr.Column():
-                search_and_replace_file = gr.File(label="Select search and replace file", file_types=[".txt"], 
+                search_and_replace_file = gr.File(label="Select search and replace file (optional)", file_types=[".txt"], 
                                                  file_count="single", interactive=True)
 
             title_mode = gr.Dropdown(["auto", "tag_text", "first_few"], label="Title Mode", value="auto",
