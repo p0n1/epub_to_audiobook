@@ -53,7 +53,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
                     azure_language, azure_voice, azure_output_format, break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noice_scale, piper_noice_w_scale, piper_length_scale, piper_sentence_silence):
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence):
 
     config = GeneralConfig(None)
     config.input_file = input_file.name if hasattr(input_file, 'name') else input_file
@@ -102,8 +102,8 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.piper_docker_image = piper_docker_image
         config.model_name = f"{piper_language}-{piper_voice}-{piper_quality}"
         config.piper_speaker = piper_speaker
-        config.piper_noise_scale = piper_noice_scale
-        config.piper_noise_w_scale = piper_noice_w_scale
+        config.piper_noise_scale = piper_noise_scale
+        config.piper_noise_w_scale = piper_noise_w_scale
         config.piper_length_scale = piper_length_scale
         config.piper_sentence_silence = piper_sentence_silence
     else:
@@ -166,9 +166,9 @@ def host_ui(config):
             chapter_end = gr.Slider(minimum=-1, maximum=100, step=1, label="Chapter End", value=-1,
                                     interactive=True, info="Chapter end index (default: -1, means last chapter)")
             with gr.Column():
-                remove_endnotes = gr.Checkbox(label="Remove Endnotes", value=True, info="Remove endnotes from text")
+                remove_endnotes = gr.Checkbox(label="Remove Endnotes", value=False, info="Remove endnotes from text")
 
-                remove_reference_numbers = gr.Checkbox(label="Remove Reference Numbers", value=True,
+                remove_reference_numbers = gr.Checkbox(label="Remove Reference Numbers", value=False,
                                                        info="Remove reference numbers from text")
 
 
@@ -282,8 +282,8 @@ def host_ui(config):
 
                     with gr.Column():
                         with gr.Row(equal_height=True):
-                            piper_noice_scale = gr.Slider(minimum=0.0, maximum=2.0, step=0.01, label="Audio Noise Scale", value=0.667)
-                            piper_noice_w_scale = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, label="Width Noise Scale", value=0.8)
+                            piper_noise_scale = gr.Slider(minimum=0.0, maximum=2.0, step=0.01, label="Audio Noise Scale", value=0.667)
+                            piper_noise_w_scale = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, label="Width Noise Scale", value=0.8)
                         with gr.Row(equal_height=True):
                             piper_length_scale = gr.Slider(minimum=0.0, maximum=5.0, step=0.1, label="Audio Length Scale", value=1.0)
                             piper_sentence_silence = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, label="Sentence Silence", value=0.2)
@@ -302,7 +302,7 @@ def host_ui(config):
                     azure_language, azure_voice, azure_output_format, break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noice_scale, piper_noice_w_scale, piper_length_scale, piper_sentence_silence
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence
                 ],
                 outputs=None)
         with gr.Row():
