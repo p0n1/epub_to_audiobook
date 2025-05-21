@@ -17,7 +17,7 @@ from audiobook_generator.tts_providers.piper_tts_provider import get_piper_suppo
 from audiobook_generator.utils.log_handler import generate_unique_log_path
 from main import main
 
-selected_tts = "OpenAI"
+selected_tts = "Edge"
 running_process: Optional[Process] = None
 webui_log_file = None
 
@@ -173,8 +173,8 @@ def host_ui(config):
 
 
         gr.Markdown("---")
-        with gr.Tabs():
-            with gr.Tab("OpenAI") as open_ai_tab:
+        with gr.Tabs(selected="edge_tab_id"):
+            with gr.Tab("OpenAI", id="openai_tab_id") as open_ai_tab:
                 gr.Markdown("It is expected that user configured: `OPENAI_API_KEY` in the environment variables. Optionally `OPENAI_API_BASE` can be set to overwrite OpenAI API endpoint.")
                 with gr.Row(equal_height=True):
                     model = gr.Dropdown(get_openai_supported_models(), label="Model", interactive=True, allow_custom_value=True)
@@ -186,7 +186,7 @@ def host_ui(config):
                     instructions = gr.TextArea(label="Voice Instructions", interactive=True, lines=3,
                                                value=get_openai_instructions_example())
                 open_ai_tab.select(on_tab_change, inputs=None, outputs=None)
-            with gr.Tab("Azure") as azure_tab:
+            with gr.Tab("Azure", id="azure_tab_id") as azure_tab:
                 gr.Markdown("It is expected that user configured: `MS_TTS_KEY` and `MS_TTS_REGION` in the environment variables.")
                 with gr.Row(equal_height=True):
                     azure_language = gr.Dropdown(get_azure_supported_languages(), value="en-US", label="Language",
@@ -203,7 +203,7 @@ def host_ui(config):
                     )
                 azure_tab.select(on_tab_change, inputs=None, outputs=None)
 
-            with gr.Tab("Edge") as edge_tab:
+            with gr.Tab("Edge", id="edge_tab_id") as edge_tab:
                 with gr.Row(equal_height=True):
                     edge_language = gr.Dropdown(get_edge_tts_supported_language(), value="en-US", label="Language",
                                            interactive=True, info="Select source language")
@@ -227,7 +227,7 @@ def host_ui(config):
                     )
                 edge_tab.select(on_tab_change, inputs=None, outputs=None)
 
-            with gr.Tab("Piper") as piper_tab:
+            with gr.Tab("Piper", id="piper_tab_id") as piper_tab:
                 piper_tab.select(on_tab_change, inputs=None, outputs=None)
                 with gr.Row(equal_height=True):
                     with gr.Column():
@@ -309,6 +309,6 @@ def host_ui(config):
             global webui_log_file
             webui_log_file = generate_unique_log_path("EtA_WebUI")
             webui_log_file.touch()
-            Log(webui_log_file, dark=False, xterm_font_size=12)
+            Log(webui_log_file, dark=True, xterm_font_size=12)
 
     ui.launch(server_name=config.host, server_port=config.port)
