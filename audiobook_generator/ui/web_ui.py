@@ -1,10 +1,8 @@
-import datetime
 from multiprocessing import Process
-from pathlib import Path
 from typing import Optional
 
 import gradio as gr
-
+from gradio_log import Log
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.tts_providers.azure_tts_provider import get_azure_supported_languages, \
     get_azure_supported_voices, get_azure_supported_output_formats
@@ -14,13 +12,12 @@ from audiobook_generator.tts_providers.openai_tts_provider import get_openai_sup
     get_openai_supported_voices, get_openai_instructions_example, get_openai_supported_output_formats
 from audiobook_generator.tts_providers.piper_tts_provider import get_piper_supported_languages, \
     get_piper_supported_voices, get_piper_supported_qualities, get_piper_supported_speakers
-from audiobook_generator.utils.log_handler import red_log_file, generate_unique_log_path
+from audiobook_generator.utils.log_handler import generate_unique_log_path
 from main import main
 
 selected_tts = "OpenAI"
 running_process: Optional[Process] = None
-log_file = None
-delayed_log_read_counter = 0
+webui_log_file = None
 
 def on_tab_change(evt: gr.SelectData):
     print(f"{evt.value} tab selected")
@@ -116,17 +113,10 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
 def launch_audiobook_generator(config):
     global running_process
     if running_process and running_process.is_alive():
+        print("Audiobook generator already running")
         return
 
-    global log_file
-    global delayed_log_read_counter
-    log_file = generate_unique_log_path("EtA")
-    log_file.touch()
-    config.log_file = log_file
-
-    delayed_log_read_counter = 0
-
-    running_process = Process(target=main, args=(config, str(log_file.absolute())))
+    running_process = Process(target=main, args=(config, str(webui_log_file.absolute())))
     running_process.start()
 
 
@@ -136,24 +126,6 @@ def terminate_audiobook_generator():
         running_process.terminate()
         running_process = None
         print("Audiobook generator terminated manually")
-
-def read_logs(current_value):
-    global delayed_log_read_counter
-    global running_process
-    global log_file
-
-    if log_file is None:
-        return current_value
-
-    if running_process and running_process.is_alive():
-        delayed_log_read_counter = 0
-        return red_log_file(log_file)
-    else:
-        if delayed_log_read_counter < 5:
-            delayed_log_read_counter += 1
-        
-        return red_log_file(log_file)
-
 
 def host_ui(config):
     with gr.Blocks() as ui:
@@ -331,7 +303,9 @@ def host_ui(config):
                 ],
                 outputs=None)
         with gr.Row():
-            log_display = gr.Textbox(label="Log Output", interactive=False, lines=10, max_lines=20)
-            gr.Timer(1).tick(fn=read_logs, inputs=log_display, outputs=log_display)
+            global webui_log_file
+            webui_log_file = generate_unique_log_path("EtA_WebUI")
+            webui_log_file.touch()
+            Log(webui_log_file, dark=False, xterm_font_size=12)
 
     ui.launch(server_name=config.host, server_port=config.port)
