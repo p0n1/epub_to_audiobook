@@ -9,21 +9,29 @@ from openai import OpenAI
 
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.config.general_config import GeneralConfig
-from audiobook_generator.core.utils import split_text, set_audio_tags, merge_audio_segments
+from audiobook_generator.utils.utils import split_text, set_audio_tags, merge_audio_segments
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 
 logger = logging.getLogger(__name__)
 
 
-def get_supported_formats():
+def get_openai_supported_output_formats():
     return ["mp3", "aac", "flac", "opus", "wav"]
 
-def get_supported_voices():
+def get_openai_supported_voices():
     return ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse"]
 
-def get_supported_models():
-    return ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
+def get_openai_supported_models():
+    return ["gpt-4o-mini-tts", "tts-1", "tts-1-hd"]
+
+def get_openai_instructions_example():
+    return """Voice Affect: Calm, composed, and reassuring. Competent and in control, instilling trust.
+Tone: Sincere, empathetic, with genuine concern for the customer and understanding of the situation.
+Pacing: Slower during the apology to allow for clarity and processing. Faster when offering solutions to signal action and resolution.
+Emotions: Calm reassurance, empathy, and gratitude.
+Pronunciation: Clear, precise: Ensures clarity, especially with key details. Focus on key words like 'refund' and 'patience.' 
+Pauses: Before and after the apology to give space for processing the apology."""
 
 def get_price(model):
     # https://platform.openai.com/docs/pricing#transcription-and-speech-generation
@@ -88,10 +96,10 @@ class OpenAITTSProvider(BaseTTSProvider):
             logger.debug(f"Remote server response: status_code={response.response.status_code}, "
                          f"size={len(response.content)} bytes, "
                          f"content={response.content[:128]}...")
-            
+
             audio_segments.append(io.BytesIO(response.content))
             chunk_ids.append(chunk_id)
-        
+
         # Use utility function to merge audio segments
         merge_audio_segments(audio_segments, output_file, self.config.output_format, chunk_ids, self.config.use_pydub_merge)
 
@@ -104,7 +112,7 @@ class OpenAITTSProvider(BaseTTSProvider):
         return self.config.output_format
 
     def validate_config(self):
-        if self.config.output_format not in get_supported_formats():
+        if self.config.output_format not in get_openai_supported_output_formats():
             raise ValueError(f"OpenAI: Unsupported output format: {self.config.output_format}")
         if self.config.speed < 0.25 or self.config.speed > 4.0:
             raise ValueError(f"OpenAI: Unsupported speed: {self.config.speed}")

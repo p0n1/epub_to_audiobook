@@ -1,11 +1,12 @@
 import argparse
-import logging
+from pathlib import Path
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audiobook_generator import AudiobookGenerator
 from audiobook_generator.tts_providers.base_tts_provider import (
     get_supported_tts_providers,
 )
+from audiobook_generator.utils.log_handler import setup_logging, generate_unique_log_path
 
 
 def handle_args():
@@ -182,6 +183,11 @@ def handle_args():
         help="Path to the Piper TTS executable",
     )
     piper_tts_group.add_argument(
+        "--piper_docker_image",
+        default="lscr.io/linuxserver/piper:latest",
+        help="Piper Docker image name (if using Docker)",
+    )
+    piper_tts_group.add_argument(
         "--piper_speaker",
         default=0,
         help="Piper speaker id, used for multi-speaker models",
@@ -201,26 +207,23 @@ def handle_args():
     return GeneralConfig(args)
 
 
-def setup_logging(log_level):
-    # Create a custom formatter
-    formatter = logging.Formatter(
-        "%(asctime)s - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
-    )
+def main(config=None, log_file=None):
+    if not config: # config passed from UI, or uses args if CLI
+        config = handle_args()
 
-    # Create a stream handler (prints to console)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    if log_file:
+        # If log_file is provided (e.g., from UI), use it directly as a Path object.
+        # The UI passes an absolute path string.
+        effective_log_file = Path(log_file)
+    else:
+        # Otherwise (e.g., CLI usage without a specific log file from UI),
+        # generate a unique log file name.
+        effective_log_file = generate_unique_log_path("EtA")
+    
+    # Ensure config.log_file is updated, as it's used by AudiobookGenerator for worker processes.
+    config.log_file = effective_log_file
 
-    # Configure the root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-    root_logger.addHandler(console_handler)
-
-
-def main():
-    config = handle_args()
-
-    setup_logging(config.log)
+    setup_logging(config.log, str(effective_log_file))
 
     AudiobookGenerator(config).run()
 

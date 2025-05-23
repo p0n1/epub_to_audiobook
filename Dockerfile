@@ -1,7 +1,15 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11-slim-bookworm
 
+# Set environment variables to prevent Python from buffering stdout/stderr
+# This is to ensure print statements appear in Docker logs
+ENV PYTHONUNBUFFERED=1
+
 # Set the working directory inside the container
+# This is the directory where the application code is located
+# We're not using /app here because users will mount their own volumes to /app with `docker run -i -t --rm -v ./:/app`
+# If we use /app here, then the local python files will override the ones in the container
+# Basically, we're using /app_src and /app to split code and user local files
 WORKDIR /app_src
 
 # Install system dependencies

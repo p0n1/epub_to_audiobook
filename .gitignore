@@ -23,6 +23,7 @@ venv/
 Thumbs.db
 
 .vscode
+.history
 
 # audio files
 audiobook_output/
@@ -39,3 +40,8 @@ piper_models/*
 
 # Env files
 .env
+
+# Temp Test files
+test.py
+
+logs/

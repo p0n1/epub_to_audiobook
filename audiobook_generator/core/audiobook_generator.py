@@ -6,15 +6,16 @@ from audiobook_generator.book_parsers.base_book_parser import get_book_parser
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
+from audiobook_generator.utils.log_handler import setup_logging
 
 logger = logging.getLogger(__name__)
 
 
 def confirm_conversion():
-    print("Do you want to continue? (y/n)")
+    logger.info("Do you want to continue? (y/n)")
     answer = input()
     if answer.lower() != "y":
-        print("Aborted.")
+        logger.info("Aborted.")
         exit(0)
 
 
@@ -23,28 +24,6 @@ def get_total_chars(chapters):
     for title, text in chapters:
         total_characters += len(text)
     return total_characters
-
-
-def init_worker_process(log_level):
-    """Initialize logging in worker processes."""
-    # Create a custom formatter with worker ID
-    formatter = logging.Formatter(
-        "%(asctime)s - [Worker-%(process)d] - %(filename)s:%(lineno)d - %(funcName)s - %(levelname)s - %(message)s"
-    )
-
-    # Create a stream handler (prints to console)
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-
-    # Configure the root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_level)
-    
-    # Remove existing handlers to prevent duplicate logs
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    
-    root_logger.addHandler(console_handler)
 
 
 class AudiobookGenerator:
@@ -94,6 +73,7 @@ class AudiobookGenerator:
 
     def run(self):
         try:
+            logger.info("Starting audiobook generation...")
             book_parser = get_book_parser(self.config)
             tts_provider = get_tts_provider(self.config)
 
@@ -128,15 +108,15 @@ class AudiobookGenerator:
             total_characters = get_total_chars(
                 chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             )
-            logger.info(f"✨ Total characters in selected book chapters: {total_characters} ✨")
+            logger.info(f"Total characters in selected book chapters: {total_characters}")
             rough_price = tts_provider.estimate_cost(total_characters)
-            print(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
+            logger.info(f"Estimate book voiceover would cost you roughly: ${rough_price:.2f}\n")
 
             # Prompt user to continue if not in preview mode
             if self.config.no_prompt:
-                logger.info(f"Skipping prompt as passed parameter no_prompt")
+                logger.info("Skipping prompt as passed parameter no_prompt")
             elif self.config.preview:
-                logger.info(f"Skipping prompt as in preview mode")
+                logger.info("Skipping prompt as in preview mode")
             else:
                 confirm_conversion()
 
@@ -155,12 +135,12 @@ class AudiobookGenerator:
             # Use multiprocessing to process chapters in parallel
             with multiprocessing.Pool(
                 processes=self.config.worker_count,
-                initializer=init_worker_process,
-                initargs=(self.config.log,)
+                initializer=setup_logging,
+                initargs=(self.config.log, self.config.log_file, True)
             ) as pool:
                 # Process chapters and collect results
                 results = list(pool.imap_unordered(self.process_chapter_wrapper, tasks))
-                
+
                 # Check for failed chapters
                 for idx, success in results:
                     if not success:
@@ -168,13 +148,17 @@ class AudiobookGenerator:
                         failed_chapters.append((idx, chapter_title))
 
             if failed_chapters:
-                logger.warning(f"The following chapters failed to convert:")
+                logger.warning("The following chapters failed to convert:")
                 for idx, title in failed_chapters:
                     logger.warning(f"  - Chapter {idx}: {title}")
-                logger.info(f"Conversion completed with {len(failed_chapters)} failed chapters.")
+                logger.info(f"Conversion completed with {len(failed_chapters)} failed chapters. Check your output directory: {self.config.output_folder} and log file: {self.config.log_file} for more details.")
             else:
-                logger.info(f"All chapters converted successfully. 🎉🎉🎉")
+                logger.info(f"All chapters converted successfully. Check your output directory: {self.config.output_folder}")
 
         except KeyboardInterrupt:
-            logger.info("Job stopped by user.")
-            exit()
+            logger.info("Audiobook generation process interrupted by user (Ctrl+C).")
+        except Exception as e:
+            logger.exception(f"Error during audiobook generation: {e}")
+        finally:
+            logger.debug("AudiobookGenerator.run() method finished.")
+

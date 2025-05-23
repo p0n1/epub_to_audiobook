@@ -1,6 +1,6 @@
 import unittest
 import logging
-from audiobook_generator.core.utils import split_text
+from audiobook_generator.utils.utils import split_text
 
 # Configure logging to display logs during test execution
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
