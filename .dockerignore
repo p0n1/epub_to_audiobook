@@ -33,3 +33,4 @@ audiobook_output/
 private_examples/
 tests
 logs/
+venv/
