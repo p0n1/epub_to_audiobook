@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 def confirm_conversion():
-    print("Do you want to continue? (y/n)")
+    logger.info("Do you want to continue? (y/n)")
     answer = input()
     if answer.lower() != "y":
-        print("Aborted.")
+        logger.info("Aborted.")
         exit(0)
 
 
