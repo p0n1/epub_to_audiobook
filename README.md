@@ -77,6 +77,8 @@ When you import the generated MP3 files into Audiobookshelf, the chapter titles 
 
 For users who prefer a graphical interface, this project includes a web-based UI built with Gradio. The WebUI provides an intuitive way to configure all the options and convert your EPUB files without using the command line.
 
+![WebUI Screenshot](./examples/webui.png)
+
 ### Environment Variables for WebUI
 
 The WebUI respects the same environment variables as the command-line tool:
