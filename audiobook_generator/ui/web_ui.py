@@ -310,6 +310,6 @@ def host_ui(config):
             global webui_log_file
             webui_log_file = generate_unique_log_path("EtA_WebUI")
             webui_log_file.touch()
-            Log(webui_log_file, dark=True, xterm_font_size=12)
+            Log(str(webui_log_file.absolute()), dark=True, xterm_font_size=12)
 
     ui.launch(server_name=config.host, server_port=config.port)
