@@ -132,7 +132,7 @@ def terminate_audiobook_generator():
 def host_ui(config):
     default_output_dir = os.path.join("audiobook_output", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     print(f"Default audiobook output directory: {default_output_dir}")
-    with gr.Blocks() as ui:
+    with gr.Blocks(analytics_enabled=False, title="Epub to Audiobook Converter") as ui:
         with gr.Row(equal_height=True):
             with gr.Column():
                 input_file = gr.File(label="Select the book file to process", file_types=[".epub"], 
