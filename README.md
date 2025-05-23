@@ -1,10 +1,14 @@
-# EPUB to Audiobook Converter [![Discord](https://img.shields.io/discord/1177631634724491385?label=Discord&logo=discord&logoColor=white)](https://discord.com/invite/pgp2G8zhS7)
+# EPUB to Audiobook Converter [![Discord](https://img.shields.io/discord/1177631634724491385?label=Discord&logo=discord&logoColor=white)](https://discord.com/invite/pgp2G8zhS7) [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/p0n1/epub_to_audiobook)
 
-*Join our [Discord](https://discord.com/invite/pgp2G8zhS7) server for any questions or discussions.*
+*Join our [Discord](https://discord.com/invite/pgp2G8zhS7) server for any questions or discussions. You can also ask questions about this project on [DeepWiki](https://deepwiki.com/p0n1/epub_to_audiobook).*
 
 This project provides a command-line tool to convert EPUB ebooks into audiobooks. It now supports both the [Microsoft Azure Text-to-Speech API](https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/rest-text-to-speech) (alternativly [EdgeTTS](https://github.com/rany2/edge-tts)) and the [OpenAI Text-to-Speech API](https://platform.openai.com/docs/guides/text-to-speech) to generate the audio for each chapter in the ebook. The output audio files are optimized for use with [Audiobookshelf](https://github.com/advplyr/audiobookshelf).
 
-*This project is developed with the help of ChatGPT.*
+<!-- *This project was developed with the help of ChatGPT.* -->
+
+## Recent Updates
+
+- 2025-05-23: Added a web interface (WebUI) to the project.
 
 ## Audio Sample
 
@@ -68,6 +72,84 @@ When you import the generated MP3 files into Audiobookshelf, the chapter titles 
     export MS_TTS_REGION=<your_region> # for Azure
     export OPENAI_API_KEY=<your_openai_api_key> # for OpenAI
     ```
+
+## Web Interface (WebUI)
+
+For users who prefer a graphical interface, this project includes a web-based UI built with Gradio. The WebUI provides an intuitive way to configure all the options and convert your EPUB files without using the command line.
+
+### Environment Variables for WebUI
+
+The WebUI respects the same environment variables as the command-line tool:
+
+```bash
+export MS_TTS_KEY=<your_subscription_key>      # For Azure TTS
+export MS_TTS_REGION=<your_region>             # For Azure TTS
+export OPENAI_API_KEY=<your_openai_api_key>    # For OpenAI TTS
+export OPENAI_BASE_URL=<custom_endpoint>       # Optional: For custom OpenAI-compatible endpoints
+```
+
+Make sure to set the environment variables for the service you are using before starting the WebUI.
+
+### Starting the WebUI
+
+Make sure you have followed the [Installation](#installation) steps before starting the WebUI.
+
+To launch the web interface, run:
+
+```bash
+python3 main_ui.py
+```
+
+By default, the WebUI will be available at `http://127.0.0.1:7860`. You can customize the host and port:
+
+```bash
+python3 main_ui.py --host 127.0.0.1 --port 8080
+```
+
+Remember to press `Ctrl+C` in the terminal to stop the server if you want to stop it after you are done.
+
+### WebUI Features
+
+The web interface provides:
+
+- **File Upload**: Drag and drop your EPUB file directly into the browser
+- **TTS Provider Selection**: Easy switching between Azure, OpenAI, Edge, and Piper TTS with provider-specific options
+- **Voice Configuration**: Dropdown menus for selecting languages, voices, and output formats
+- **Advanced Settings**: All command-line options are available through the web interface
+- **Real-time Logs**: View conversion progress and logs directly in the browser
+- **Preview Mode**: Test your settings without generating audio
+- **Search & Replace**: Upload text replacement files for pronunciation fixes
+
+### Using the WebUI
+
+1. **Upload your EPUB file** using the file selector
+2. **Choose your TTS provider** from the tabs (OpenAI, Azure, Edge, or Piper)
+3. **Configure provider-specific settings**:
+   - **OpenAI**: Select model, voice, speed, and format
+   - **Azure**: Choose language, voice, format, and break duration
+   - **Edge**: Set language, voice, rate, volume, and pitch
+   - **Piper**: Configure local or Docker deployment with voice options
+4. **Set output directory** or use the default timestamped folder
+5. **Adjust advanced options** if needed (chapter range, text processing, etc.)
+6. **Click Start** to begin conversion
+7. **Monitor progress** through the integrated log viewer
+
+You can select a few chapters to preview the audio before starting the full conversion.
+
+### Docker with WebUI (The Easiest Way If You Are Familiar With Docker)
+
+You can also run the WebUI using Docker. Use the provided `docker-compose.webui.yml` file. Make sure to edit the file with your API keys for your TTS provider.
+
+```bash
+# Edit docker-compose.webui.yml with your API keys
+docker compose -f docker-compose.webui.yml up
+```
+
+The WebUI will be accessible at `http://localhost:7860` or `http://127.0.0.1:7860`.
+
+### Security Considerations of WebUI
+
+The WebUI is a web application that runs on your local machine. It's currently not designed to be accessible from the open internet. There is no authorization mechanism in place. So you should not expose it to the open internet otherwise it would lead to unauthorized access to your TTS providers.
 
 ## Usage
 
@@ -312,9 +394,9 @@ Check this [step by step guide](https://gist.github.com/p0n1/cba98859cdb6331cc1a
 
 ## How to Get Your Azure Cognitive Service Key?
 
-- Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
-- [Create a Speech resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices) in the Azure portal.
-- Get the Speech resource key and region. After your Speech resource is deployed, select **Go to resource** to view and manage keys. For more information about Cognitive Services resources, see [Get the keys for your resource](https://learn.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account#get-the-keys-for-your-resource).
+- Azure subscription - [Create one for free](https://azure.microsoft.com/free/cognitive-services)
+- [Create a Speech resource](https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices) in the Azure portal.
+- Get the Speech resource key and region. After your Speech resource is deployed, select **Go to resource** to view and manage keys. For more information about Cognitive Services resources, see [Get the keys for your resource](https://learn.microsoft.com/en-us/azure/cognitive-services/cognitive-services-apis-create-account#get-the-keys-for-your-resource).
 
 *Source: <https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/get-started-text-to-speech#prerequisites>*
 
