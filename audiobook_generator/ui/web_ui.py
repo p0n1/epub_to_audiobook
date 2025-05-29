@@ -218,7 +218,7 @@ def host_ui(config):
                                             info="Volume level of the speaking voice.")
                     edge_pitch = gr.Slider(minimum=-100, maximum=100, step=1, label="Voice Pitch", value=0,
                                            info="Baseline pitch tone for the text.")
-                    edge_break_duration = gr.Slider(minimum=1, maximum=5000, step=1, label="Break Duration", value=1250,
+                    edge_break_duration = gr.Slider(minimum=0, maximum=5000, step=1, label="Break Duration", value=1250,
                                                info="Break duration in milliseconds. Valid values range from 0 to 5000, default: 1250ms")
 
                     edge_language.change(
