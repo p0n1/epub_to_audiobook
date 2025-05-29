@@ -50,8 +50,8 @@ def get_piper_supported_speakers_gui(language, voice, quality):
 def process_ui_form(input_file, output_dir, worker_count, log_level, output_text, preview,
                     search_and_replace_file, title_mode, new_line_mode, chapter_start, chapter_end, remove_endnotes, remove_reference_numbers,
                     model, voices, speed, openai_output_format, instructions,
-                    azure_language, azure_voice, azure_output_format, break_duration,
-                    edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch,
+                    azure_language, azure_voice, azure_output_format, azure_break_duration,
+                    edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
                     piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence):
 
@@ -85,7 +85,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.language = azure_language
         config.voice_name = azure_voice
         config.output_format = azure_output_format
-        config.break_duration = break_duration
+        config.break_duration = azure_break_duration
     elif selected_tts == "Edge":
         config.tts = "edge"
         config.language = edge_language
@@ -95,7 +95,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.voice_rate = edge_voice_rate
         config.voice_volume = edge_volume
         config.voice_pitch = edge_pitch
-        config.break_duration = break_duration
+        config.break_duration = edge_break_duration
     elif selected_tts == "Piper":
         config.tts = "piper"
         config.piper_path = piper_executable_path
@@ -195,7 +195,7 @@ def host_ui(config):
                     azure_voice = get_azure_voices_by_language(azure_language.value)
                     azure_output_format = gr.Dropdown(get_azure_supported_output_formats(), label="Output Format", interactive=True,
                                                 value="audio-24khz-48kbitrate-mono-mp3", info="Select output format")
-                    break_duration = gr.Slider(minimum=1, maximum=5000, step=1, label="Break Duration", value=1250,
+                    azure_break_duration = gr.Slider(minimum=0, maximum=5000, step=1, label="Break Duration", value=1250,
                                                info="Break duration in milliseconds. Valid values range from 0 to 5000, default: 1250ms")
                     azure_language.change(
                         fn=get_azure_voices_by_language,
@@ -218,7 +218,7 @@ def host_ui(config):
                                             info="Volume level of the speaking voice.")
                     edge_pitch = gr.Slider(minimum=-100, maximum=100, step=1, label="Voice Pitch", value=0,
                                            info="Baseline pitch tone for the text.")
-                    break_duration = gr.Slider(minimum=1, maximum=5000, step=1, label="Break Duration", value=1250,
+                    edge_break_duration = gr.Slider(minimum=0, maximum=5000, step=1, label="Break Duration", value=1250,
                                                info="Break duration in milliseconds. Valid values range from 0 to 5000, default: 1250ms")
 
                     edge_language.change(
@@ -300,8 +300,8 @@ def host_ui(config):
                     input_file, output_dir, worker_count, log_level, output_text, preview,
                     search_and_replace_file, title_mode, new_line_mode, chapter_start, chapter_end, remove_endnotes, remove_reference_numbers,
                     model, voices, speed, openai_output_format, instructions,
-                    azure_language, azure_voice, azure_output_format, break_duration,
-                    edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch,
+                    azure_language, azure_voice, azure_output_format, azure_break_duration,
+                    edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
                     piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence
                 ],
