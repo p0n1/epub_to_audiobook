@@ -195,7 +195,7 @@ def host_ui(config):
                     azure_voice = get_azure_voices_by_language(azure_language.value)
                     azure_output_format = gr.Dropdown(get_azure_supported_output_formats(), label="Output Format", interactive=True,
                                                 value="audio-24khz-48kbitrate-mono-mp3", info="Select output format")
-                    azure_break_duration = gr.Slider(minimum=1, maximum=5000, step=1, label="Break Duration", value=1250,
+                    azure_break_duration = gr.Slider(minimum=0, maximum=5000, step=1, label="Break Duration", value=1250,
                                                info="Break duration in milliseconds. Valid values range from 0 to 5000, default: 1250ms")
                     azure_language.change(
                         fn=get_azure_voices_by_language,
