@@ -2,18 +2,25 @@ import asyncio
 import logging
 import math
 import io
+from time import sleep
 
 import edge_tts
 from edge_tts import list_voices
-from typing import Union
 from pydub import AudioSegment
 
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
-from audiobook_generator.utils.utils import set_audio_tags
+from audiobook_generator.utils.utils import (
+    pydub_merge_audio_segments,
+    save_segment_tmp,
+    set_audio_tags,
+    split_text,
+)
 from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 logger = logging.getLogger(__name__)
+
+MAX_RETRIES = 12  # Max_retries constant for network errors
 
 
 async def get_supported_voices():
@@ -45,12 +52,15 @@ class CommWithPauses:
         voice_name: str,
         break_string: str,
         break_duration: int = 1250,
+        output_format_ext: str = "mp3",
         **kwargs,
     ) -> None:
         self.full_text = text
         self.voice_name = voice_name
         self.break_string = break_string
         self.break_duration = int(break_duration)
+        self.output_format_ext = output_format_ext
+        self.kwargs = kwargs
 
         self.parsed = self.parse_text()
         self.file = io.BytesIO()
@@ -90,7 +100,7 @@ class CommWithPauses:
         logger.debug(f"Generating audio for: <{text}>")
         # this genertes the real TTS using edge_tts for this part.
         temp_chunk = io.BytesIO()
-        communicate = edge_tts.Communicate(text, self.voice_name)
+        communicate = edge_tts.Communicate(text, self.voice_name, **self.kwargs)
         async for chunk in communicate.stream():
             if chunk["type"] == "audio":
                 temp_chunk.write(chunk["data"])
@@ -108,19 +118,18 @@ class CommWithPauses:
         logger.debug(f"Returning the decoded chunk")
         return decoded_chunk.raw_data  # type: ignore
 
-    async def save(
-        self,
-        audio_fname: Union[str, bytes],
-    ) -> None:
-        await self.chunkify()
+    async def get_audio_stream(self) -> io.BytesIO:
+        await self.chunkify() # main logic to chunkify the text and generate audio segments
 
         self.file.seek(0)
         audio: AudioSegment = AudioSegment.from_raw(
             self.file, sample_width=2, frame_rate=24000, channels=1
         )
-        logger.debug(f"Exporting the audio")
-        audio.export(audio_fname)
-        logger.info(f"Saved the audio to: {audio_fname}")
+
+        output_bytes = io.BytesIO()
+        audio.export(output_bytes, format=self.output_format_ext)
+        output_bytes.seek(0)
+        return output_bytes
 
 
 class EdgeTTSProvider(BaseTTSProvider):
@@ -145,7 +154,9 @@ class EdgeTTSProvider(BaseTTSProvider):
         return f"{self.config}"
 
     def validate_config(self):
-        supported_voices = asyncio.run(get_supported_voices())
+        # no need to send request to edge-tts to get supported voices, just use the hardcoded list.
+        # supported_voices = asyncio.run(get_supported_voices())
+        supported_voices = get_edge_tts_supported_voices()
         # logger.debug(f"Supported voices: {supported_voices}")
         if self.config.voice_name not in supported_voices:
             raise ValueError(
@@ -158,19 +169,55 @@ class EdgeTTSProvider(BaseTTSProvider):
         output_file: str,
         audio_tags: AudioTags,
     ):
+        # edge-tts package has a much higher limit than below, but I feels better to use a smaller limit to reduce the risk of error.
+        # just use the same value as azure-tts-provider now, change it if needed.
+        max_chars = 1800 if self.config.language.startswith("zh") else 3000
 
-        communicate = CommWithPauses(
-            text=text,
-            voice_name=self.config.voice_name,
-            break_string=self.get_break_string().strip(),
-            break_duration=int(self.config.break_duration),
-            rate=self.config.voice_rate,
-            volume=self.config.voice_volume,
-            pitch=self.config.voice_pitch,
-            proxy=self.config.proxy,
+        text_chunks = split_text(text, max_chars, self.config.language)
+
+        tmp_files = []
+        for i, chunk in enumerate(text_chunks, 1):
+            chunk_id = f"chapter-{audio_tags.idx}_{audio_tags.title}_chunk_{i}_of_{len(text_chunks)}"
+            logger.info(f"Processing {chunk_id}, length={len(chunk)}")
+            logger.debug(f"Processing {chunk_id}, length={len(chunk)}, text=[{chunk}]")
+            
+            for retry in range(MAX_RETRIES):
+                try:
+                    communicate = CommWithPauses(
+                        text=chunk,
+                        voice_name=self.config.voice_name,
+                        break_string=self.get_break_string().strip(),
+                        break_duration=int(self.config.break_duration),
+                        output_format_ext=self.get_output_file_extension(),
+                        rate=self.config.voice_rate,
+                        volume=self.config.voice_volume,
+                        pitch=self.config.voice_pitch,
+                        proxy=self.config.proxy,
+                    )
+                    audio_stream = asyncio.run(communicate.get_audio_stream())
+                    tmp_file = save_segment_tmp(
+                        audio_stream,
+                        self.get_output_file_extension(),
+                        prefix=chunk_id,
+                    )
+                    tmp_files.append(tmp_file)
+                    break  # success
+                except Exception as e:
+                    logger.warning(
+                        f"Error while converting text to speech for {chunk_id} (attempt {retry + 1}/{MAX_RETRIES}): {e}"
+                    )
+                    if retry < MAX_RETRIES - 1:
+                        sleep_time = 2**retry
+                        logger.warning(
+                            f"Sleeping for {sleep_time} seconds before retrying, you can also stop the program manually and check error logs."
+                        )
+                        sleep(sleep_time)
+                    else:
+                        raise e
+
+        pydub_merge_audio_segments(
+            tmp_files, output_file, self.get_output_file_extension()
         )
-
-        asyncio.run(communicate.save(output_file))
 
         set_audio_tags(output_file, audio_tags)
 
