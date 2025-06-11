@@ -64,6 +64,7 @@ class CommWithPauses:
             return [self.full_text]
 
         parts = self.full_text.split(self.break_string)
+        parts = [p for p in parts if p.strip()] # skip empty parts
         logger.debug(f"split into <{len(parts)}> parts: {parts}")
         return parts
 
