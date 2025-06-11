@@ -144,7 +144,7 @@ class AzureTTSProvider(BaseTTSProvider):
                         f"Error while converting text to speech (attempt {retry + 1}): {e}"
                     )
                     if retry < MAX_RETRIES - 1:
-                        logger.warning(f"Sleeping for {2 ** retry} seconds before retrying")
+                        logger.warning(f"Sleeping for {2 ** retry} seconds before retrying, you can also stop the program manually and check error logs.")
                         sleep(2 ** retry)
                     else:
                         raise e
