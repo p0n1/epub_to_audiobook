@@ -92,9 +92,9 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.voice_name = edge_voice
         config.output_format = edge_output_format
         config.proxy = proxy
-        config.voice_rate = edge_voice_rate
-        config.voice_volume = edge_volume
-        config.voice_pitch = edge_pitch
+        config.voice_rate = f"{edge_voice_rate:+}%"
+        config.voice_volume = f"{edge_volume:+}%"
+        config.voice_pitch = f"{edge_pitch:+}Hz"
         config.break_duration = edge_break_duration
     elif selected_tts == "Piper":
         config.tts = "piper"
