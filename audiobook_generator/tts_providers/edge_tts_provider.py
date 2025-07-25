@@ -74,9 +74,43 @@ class CommWithPauses:
             return [self.full_text]
 
         parts = self.full_text.split(self.break_string)
-        parts = [p for p in parts if p.strip()] # skip empty parts
-        logger.debug(f"split into <{len(parts)}> parts: {parts}")
-        return parts
+
+        # Filter out empty parts and parts that don't contain meaningful text which may cause NoAudioReceived error in Edge TTS, then strip each meaningful part
+        meaningful_parts = []
+        for part in parts:
+            if self._is_meaningful_text(part):
+                meaningful_parts.append(part.strip())
+        
+        logger.debug(f"split into <{len(meaningful_parts)}> meaningful parts: {meaningful_parts}")
+        return meaningful_parts
+
+    def _is_meaningful_text(self, text: str) -> bool:
+        """
+        Check if a text chunk contains meaningful content for Edge TTS generation.
+
+        Args:
+            text: The text chunk to check
+
+        Returns:
+            True if the text is meaningful for Edge TTS, False otherwise
+        """
+
+        stripped_text = text.strip()
+        if not stripped_text:
+            return False
+
+        # Check if the text contains any alphanumeric characters
+        # This filters out problematic pure punctuations without alphanumeric content which may cause NoAudioReceived error in Edge TTS
+        # but keeps single letters like 'A', 'B', 'C', or 'A,' 'B,' 'C,'
+        if not any(
+            char.isalnum() for char in stripped_text
+        ):  # means every character in the text is not alphanumeric
+            if len(stripped_text) >= 50:
+                logger.warning(
+                    f"Found a long text chunk without alphanumeric content: <{stripped_text}>, this might be a bug for specific text, please open an issue on https://github.com/p0n1/epub_to_audiobook/issues"
+                )
+            return False
+        return True
 
     async def chunkify(self):
         logger.debug(f"Chunkifying the text")
