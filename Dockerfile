@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim-bookworm
+FROM python:3.11-slim-trixie
 
 # Set environment variables to prevent Python from buffering stdout/stderr
 # This is to ensure print statements appear in Docker logs
