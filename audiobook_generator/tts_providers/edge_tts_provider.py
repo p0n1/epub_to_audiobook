@@ -11,8 +11,6 @@ from pydub import AudioSegment
 from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.utils.utils import (
-    pydub_merge_audio_segments,
-    save_segment_tmp,
     set_audio_tags,
     split_text,
 )
@@ -67,10 +65,11 @@ class CommWithPauses:
 
     def parse_text(self):
         logger.debug(
-            f"Parsing the text, looking for break/pauses in text: <{self.full_text}>"
+            "Parsing the text, looking for break/pauses in text: "
+            f"<{self.full_text}>"
         )
         if self.break_string not in self.full_text:
-            logger.debug(f"No break/pauses found in the text")
+            logger.debug("No break/pauses found in the text")
             return [self.full_text]
 
         parts = self.full_text.split(self.break_string)
@@ -113,7 +112,7 @@ class CommWithPauses:
         return True
 
     async def chunkify(self):
-        logger.debug(f"Chunkifying the text")
+        logger.debug("Chunkifying the text")
         for content in self.parsed:
             logger.debug(f"content from parsed: <{content}>")
             audio_bytes = await self.generate_audio(content)
@@ -122,10 +121,10 @@ class CommWithPauses:
                 # only same break duration for all breaks is supported now
                 pause_bytes = self.generate_pause(self.break_duration)
                 self.file.write(pause_bytes)
-        logger.debug(f"Chunkifying done")
+        logger.debug("Chunkifying done")
 
     def generate_pause(self, time: int) -> bytes:
-        logger.debug(f"Generating pause")
+        logger.debug("Generating pause")
         # pause time should be provided in ms
         silent: AudioSegment = AudioSegment.silent(time, 24000)
         return silent.raw_data  # type: ignore
@@ -142,14 +141,14 @@ class CommWithPauses:
         temp_chunk.seek(0)
         # handle the case where the chunk is empty
         try:
-            logger.debug(f"Decoding the chunk")
+            logger.debug("Decoding the chunk")
             decoded_chunk = AudioSegment.from_mp3(temp_chunk)
         except Exception as e:
             logger.warning(
                 f"Failed to decode the chunk, reason: {e}, returning a silent chunk."
             )
             decoded_chunk = AudioSegment.silent(0, 24000)
-        logger.debug(f"Returning the decoded chunk")
+        logger.debug("Returning the decoded chunk")
         return decoded_chunk.raw_data  # type: ignore
 
     async def get_audio_stream(self) -> io.BytesIO:
@@ -164,6 +163,15 @@ class CommWithPauses:
         audio.export(output_bytes, format=self.output_format_ext)
         output_bytes.seek(0)
         return output_bytes
+
+    async def get_audio_segment(self) -> AudioSegment:
+        """
+        Generate and return an AudioSegment (PCM) so callers can merge in-memory
+        and perform a single encode at the end to avoid quality loss.
+        """
+        await self.chunkify()
+        self.file.seek(0)
+        return AudioSegment.from_raw(self.file, sample_width=2, frame_rate=24000, channels=1)
 
 
 class EdgeTTSProvider(BaseTTSProvider):
@@ -209,12 +217,13 @@ class EdgeTTSProvider(BaseTTSProvider):
 
         text_chunks = split_text(text, max_chars, self.config.language)
 
-        tmp_files = []
+        # Build in-memory PCM segments for each chunk, then export once to MP3 at target bitrate
+        segments: list[AudioSegment] = []
         for i, chunk in enumerate(text_chunks, 1):
             chunk_id = f"chapter-{audio_tags.idx}_{audio_tags.title}_chunk_{i}_of_{len(text_chunks)}"
             logger.info(f"Processing {chunk_id}, length={len(chunk)}")
             logger.debug(f"Processing {chunk_id}, length={len(chunk)}, text=[{chunk}]")
-            
+
             for retry in range(MAX_RETRIES):
                 try:
                     communicate = CommWithPauses(
@@ -228,13 +237,8 @@ class EdgeTTSProvider(BaseTTSProvider):
                         pitch=self.config.voice_pitch,
                         proxy=self.config.proxy,
                     )
-                    audio_stream = asyncio.run(communicate.get_audio_stream())
-                    tmp_file = save_segment_tmp(
-                        audio_stream,
-                        self.get_output_file_extension(),
-                        prefix=chunk_id,
-                    )
-                    tmp_files.append(tmp_file)
+                    segment = asyncio.run(communicate.get_audio_segment())
+                    segments.append(segment)
                     break  # success
                 except Exception as e:
                     logger.warning(
@@ -249,9 +253,14 @@ class EdgeTTSProvider(BaseTTSProvider):
                     else:
                         raise e
 
-        pydub_merge_audio_segments(
-            tmp_files, output_file, self.get_output_file_extension()
-        )
+        # Merge all PCM segments
+        combined = AudioSegment.empty()
+        for seg in segments:
+            combined += seg
+
+        # Export once to MP3 at the desired bitrate to avoid downsampling artifacts
+        target_bitrate = self._get_target_bitrate()
+        combined.export(output_file, format=self.get_output_file_extension(), bitrate=target_bitrate)
 
         set_audio_tags(output_file, audio_tags)
 
@@ -269,6 +278,12 @@ class EdgeTTSProvider(BaseTTSProvider):
             raise NotImplementedError(
                 f"Unknown file extension for output format: {self.config.output_format}. Only mp3 supported in edge-tts. See https://github.com/rany2/edge-tts/issues/179."
             )
+
+    def _get_target_bitrate(self) -> str:
+        """
+        Edge TTS only supports MP3; use 48 kbps to match edge-tts stream quality.
+        """
+        return "48k"
 
 
 def get_edge_tts_supported_output_formats():
