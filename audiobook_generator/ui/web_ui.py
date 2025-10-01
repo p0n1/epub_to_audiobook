@@ -17,7 +17,7 @@ from audiobook_generator.tts_providers.piper_tts_provider import get_piper_suppo
 from audiobook_generator.utils.log_handler import generate_unique_log_path
 from main import main
 
-selected_tts = "Edge"
+selected_tts = "OpenAI"
 running_process: Optional[Process] = None
 webui_log_file = None
 
@@ -49,7 +49,7 @@ def get_piper_supported_speakers_gui(language, voice, quality):
 
 def process_ui_form(input_file, output_dir, worker_count, log_level, output_text, preview,
                     search_and_replace_file, title_mode, new_line_mode, chapter_start, chapter_end, remove_endnotes, remove_reference_numbers,
-                    model, voices, speed, openai_output_format, instructions,
+                    model, voices, speed, openai_output_format, openai_use_pydub_merge, instructions,
                     azure_language, azure_voice, azure_output_format, azure_break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
@@ -75,6 +75,7 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
     global selected_tts
     if selected_tts == "OpenAI":
         config.tts = "openai"
+        config.use_pydub_merge = openai_use_pydub_merge
         config.output_format = openai_output_format
         config.voice_name = voices
         config.model_name = model
@@ -183,6 +184,8 @@ def host_ui(config):
                     speed = gr.Slider(minimum=0.25, maximum=4.0, step=0.1, label="Speed", value=1.0,
                                       info="Speed of the speech, 1.0 is normal speed")
                     openai_output_format = gr.Dropdown(get_openai_supported_output_formats(), label="Output Format", interactive=True)
+                    openai_use_pydub_merge = gr.Checkbox(label="Use pydub to merge audio segments", value=True, info="Use pydub to merge audio segments of one chapter into single file instead of direct write.")
+
                 with gr.Row(equal_height=True):
                     instructions = gr.TextArea(label="Voice Instructions", interactive=True, lines=3,
                                                value=get_openai_instructions_example())
