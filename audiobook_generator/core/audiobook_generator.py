@@ -7,6 +7,7 @@ from audiobook_generator.config.general_config import GeneralConfig
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
 from audiobook_generator.utils.log_handler import setup_logging
+from audiobook_generator.utils.filename_sanitizer import make_safe_filename
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,14 @@ class AudiobookGenerator:
 
             # Save chapter text if required
             if self.config.output_text:
-                text_file = os.path.join(self.config.output_folder, f"{idx:04d}_{title}.txt")
+                safe_txt_name = make_safe_filename(
+                    title=title,
+                    idx=idx,
+                    output_dir=self.config.output_folder,
+                    ext=".txt",
+                    collision_check=True,
+                )
+                text_file = os.path.join(self.config.output_folder, safe_txt_name)
                 with open(text_file, "w", encoding="utf-8") as f:
                     f.write(text)
 
@@ -49,11 +57,17 @@ class AudiobookGenerator:
             if self.config.preview:
                 return True
 
-            # Generate audio file
-            output_file = os.path.join(
-                self.config.output_folder,
-                f"{idx:04d}_{title}.{tts_provider.get_output_file_extension()}",
+            # Generate audio file (safe, length-limited, cross-platform)
+            audio_ext = "." + tts_provider.get_output_file_extension()
+            safe_audio_name = make_safe_filename(
+                title=title,
+                idx=idx,
+                output_dir=self.config.output_folder,
+                ext=audio_ext,
+                collision_check=True,
             )
+            output_file = os.path.join(self.config.output_folder, safe_audio_name)
+
             audio_tags = AudioTags(
                 title, book_parser.get_book_author(), book_parser.get_book_title(), idx
             )
