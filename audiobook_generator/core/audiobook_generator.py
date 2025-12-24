@@ -47,7 +47,7 @@ class AudiobookGenerator:
                     idx=idx,
                     output_dir=self.config.output_folder,
                     ext=".txt",
-                    collision_check=True,
+                    collision_check=False,
                 )
                 text_file = os.path.join(self.config.output_folder, safe_txt_name)
                 with open(text_file, "w", encoding="utf-8") as f:
@@ -64,7 +64,7 @@ class AudiobookGenerator:
                 idx=idx,
                 output_dir=self.config.output_folder,
                 ext=audio_ext,
-                collision_check=True,
+                collision_check=False,
             )
             output_file = os.path.join(self.config.output_folder, safe_audio_name)
 
