@@ -3,7 +3,7 @@ EbookLib==0.19
 mutagen==1.47.0
 openai==1.85.0
 requests==2.32.4
-edge-tts==7.0.2
+edge-tts==7.2.7
 pydub==0.25.1
 wyoming==1.6.0
 gradio==5.33.1
