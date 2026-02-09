@@ -203,6 +203,13 @@ def handle_args():
         help="Phoneme length, a.k.a. speaking rate",
     )
 
+    pocket_tts_group = parser.add_argument_group(title="pocket-tts specific")
+    pocket_tts_group.add_argument(
+        "--pocket_voice",
+        default="alba",
+        help="Voice name for Pocket-TTS. Built-in voices: alba, marius, javert, jean, fantine, cosette, eponine, azelma. Can also be a path to a custom .wav file for voice cloning (default: alba)",
+    )
+
     args = parser.parse_args()
     return GeneralConfig(args)
 
