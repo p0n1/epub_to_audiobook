@@ -71,13 +71,13 @@ class PocketTTSProvider(BaseTTSProvider):
                 logger.warning(f"Failed to load voice '{voice_name}': {e}. Falling back to 'alba'")
                 self.voice_state = self.tts_model.get_state_for_audio_prompt("alba")
 
-    def _chunk_text(self, text: str, max_chars: int = 500) -> List[str]:
+    def _chunk_text(self, text: str, max_chars: int = 200) -> List[str]:
         """
         Split text into smaller chunks to avoid tensor size mismatches.
         
         Args:
             text: The text to chunk
-            max_chars: Maximum characters per chunk
+            max_chars: Maximum characters per chunk (default 200 for safety)
             
         Returns:
             List of text chunks
@@ -126,7 +126,7 @@ class PocketTTSProvider(BaseTTSProvider):
             logger.info(f"Generating audio for text of length {len(text)} characters")
             
             # Chunk the text to avoid tensor size mismatches with long texts
-            chunks = self._chunk_text(text, max_chars=500)
+            chunks = self._chunk_text(text, max_chars=200)
             logger.info(f"Split text into {len(chunks)} chunks")
             
             # Generate audio for each chunk
@@ -134,26 +134,54 @@ class PocketTTSProvider(BaseTTSProvider):
             for i, chunk in enumerate(chunks):
                 logger.debug(f"Generating audio for chunk {i+1}/{len(chunks)} ({len(chunk)} chars)")
                 
-                # Generate audio using Pocket-TTS
-                audio_tensor = self.tts_model.generate_audio(self.voice_state, chunk)
-                
-                # Convert torch tensor to numpy array
-                audio_data = audio_tensor.numpy()
-                
-                # Normalize to int16 range if needed
-                if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
-                    # Pocket-TTS typically outputs float32 in range [-1, 1]
-                    audio_data = (audio_data * 32767).astype(np.int16)
-                
-                # Create AudioSegment from raw audio data
-                audio_segment = AudioSegment(
-                    data=audio_data.tobytes(),
-                    sample_width=2,  # 16-bit audio = 2 bytes
-                    frame_rate=self.sample_rate,
-                    channels=1  # Pocket-TTS outputs mono
-                )
-                
-                audio_segments.append(audio_segment)
+                try:
+                    # Create a fresh voice state for each chunk to avoid state corruption
+                    # This prevents the tensor size mismatch issue
+                    fresh_voice_state = self.tts_model.get_state_for_audio_prompt(
+                        self.config.pocket_voice or "alba"
+                    )
+                    
+                    # Generate audio using Pocket-TTS with fresh state
+                    audio_tensor = self.tts_model.generate_audio(fresh_voice_state, chunk)
+                    
+                    # Convert torch tensor to numpy array
+                    audio_data = audio_tensor.numpy()
+                    
+                    # Normalize to int16 range if needed
+                    if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
+                        # Pocket-TTS typically outputs float32 in range [-1, 1]
+                        audio_data = (audio_data * 32767).astype(np.int16)
+                    
+                    # Create AudioSegment from raw audio data
+                    audio_segment = AudioSegment(
+                        data=audio_data.tobytes(),
+                        sample_width=2,  # 16-bit audio = 2 bytes
+                        frame_rate=self.sample_rate,
+                        channels=1  # Pocket-TTS outputs mono
+                    )
+                    
+                    audio_segments.append(audio_segment)
+                    
+                except Exception as chunk_error:
+                    logger.error(f"Error generating audio for chunk {i+1}: {chunk_error}")
+                    # Try with an even shorter version of this chunk
+                    logger.warning(f"Retrying with shorter chunks for chunk {i+1}")
+                    sub_chunks = self._chunk_text(chunk, max_chars=100)
+                    for sub_chunk in sub_chunks:
+                        fresh_voice_state = self.tts_model.get_state_for_audio_prompt(
+                            self.config.pocket_voice or "alba"
+                        )
+                        audio_tensor = self.tts_model.generate_audio(fresh_voice_state, sub_chunk)
+                        audio_data = audio_tensor.numpy()
+                        if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
+                            audio_data = (audio_data * 32767).astype(np.int16)
+                        audio_segment = AudioSegment(
+                            data=audio_data.tobytes(),
+                            sample_width=2,
+                            frame_rate=self.sample_rate,
+                            channels=1
+                        )
+                        audio_segments.append(audio_segment)
             
             # Combine all audio segments
             logger.info(f"Combining {len(audio_segments)} audio segments")
