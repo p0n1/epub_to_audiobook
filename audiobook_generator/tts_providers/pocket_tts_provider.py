@@ -1,6 +1,8 @@
 import logging
+import re
 import tempfile
 from pathlib import Path
+from typing import List
 
 import numpy as np
 from pydub import AudioSegment
@@ -69,6 +71,45 @@ class PocketTTSProvider(BaseTTSProvider):
                 logger.warning(f"Failed to load voice '{voice_name}': {e}. Falling back to 'alba'")
                 self.voice_state = self.tts_model.get_state_for_audio_prompt("alba")
 
+    def _chunk_text(self, text: str, max_chars: int = 500) -> List[str]:
+        """
+        Split text into smaller chunks to avoid tensor size mismatches.
+        
+        Args:
+            text: The text to chunk
+            max_chars: Maximum characters per chunk
+            
+        Returns:
+            List of text chunks
+        """
+        # Split on sentence boundaries first
+        sentences = re.split(r'([.!?]+\s+)', text)
+        
+        chunks = []
+        current_chunk = ""
+        
+        for i in range(0, len(sentences), 2):
+            sentence = sentences[i]
+            separator = sentences[i + 1] if i + 1 < len(sentences) else ""
+            sentence_with_sep = sentence + separator
+            
+            # If adding this sentence would exceed max_chars, start a new chunk
+            if len(current_chunk) + len(sentence_with_sep) > max_chars and current_chunk:
+                chunks.append(current_chunk.strip())
+                current_chunk = sentence_with_sep
+            else:
+                current_chunk += sentence_with_sep
+        
+        # Add the last chunk if it's not empty
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+        
+        # If we still have no chunks (text was very short), just use the original text
+        if not chunks:
+            chunks = [text]
+        
+        return chunks
+
     def text_to_speech(self, text: str, output_file: str, audio_tags: AudioTags):
         """
         Convert text to speech using Pocket-TTS.
@@ -84,22 +125,25 @@ class PocketTTSProvider(BaseTTSProvider):
         try:
             logger.info(f"Generating audio for text of length {len(text)} characters")
             
-            # Generate audio using Pocket-TTS
-            audio_tensor = self.tts_model.generate_audio(self.voice_state, text)
+            # Chunk the text to avoid tensor size mismatches with long texts
+            chunks = self._chunk_text(text, max_chars=500)
+            logger.info(f"Split text into {len(chunks)} chunks")
             
-            # Convert torch tensor to numpy array
-            audio_data = audio_tensor.numpy()
-            
-            # Normalize to int16 range if needed
-            if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
-                # Pocket-TTS typically outputs float32 in range [-1, 1]
-                audio_data = (audio_data * 32767).astype(np.int16)
-            
-            with tempfile.TemporaryDirectory() as tmpdirname:
-                logger.debug("Created temporary directory %r", tmpdirname)
+            # Generate audio for each chunk
+            audio_segments = []
+            for i, chunk in enumerate(chunks):
+                logger.debug(f"Generating audio for chunk {i+1}/{len(chunks)} ({len(chunk)} chars)")
                 
-                # Create temporary WAV file
-                tmpfilename = Path(tmpdirname) / "pocket_tts.wav"
+                # Generate audio using Pocket-TTS
+                audio_tensor = self.tts_model.generate_audio(self.voice_state, chunk)
+                
+                # Convert torch tensor to numpy array
+                audio_data = audio_tensor.numpy()
+                
+                # Normalize to int16 range if needed
+                if audio_data.dtype == np.float32 or audio_data.dtype == np.float64:
+                    # Pocket-TTS typically outputs float32 in range [-1, 1]
+                    audio_data = (audio_data * 32767).astype(np.int16)
                 
                 # Create AudioSegment from raw audio data
                 audio_segment = AudioSegment(
@@ -109,8 +153,22 @@ class PocketTTSProvider(BaseTTSProvider):
                     channels=1  # Pocket-TTS outputs mono
                 )
                 
+                audio_segments.append(audio_segment)
+            
+            # Combine all audio segments
+            logger.info(f"Combining {len(audio_segments)} audio segments")
+            combined_audio = audio_segments[0]
+            for segment in audio_segments[1:]:
+                combined_audio += segment
+            
+            with tempfile.TemporaryDirectory() as tmpdirname:
+                logger.debug("Created temporary directory %r", tmpdirname)
+                
+                # Create temporary WAV file
+                tmpfilename = Path(tmpdirname) / "pocket_tts.wav"
+                
                 # Export to temporary WAV file
-                audio_segment.export(tmpfilename, format="wav")
+                combined_audio.export(tmpfilename, format="wav")
                 
                 # Set audio tags if provided
                 if audio_tags:
