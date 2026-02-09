@@ -58,17 +58,16 @@ class PocketTTSProvider(BaseTTSProvider):
             logger.info(f"Loading custom voice from: {voice_name}")
             self.voice_state = self.tts_model.get_state_for_audio_prompt(voice_name)
         else:
-            # Use built-in voice from Hugging Face
+            # Use built-in voice by name
             # Built-in voices: alba, marius, javert, jean, fantine, cosette, eponine, azelma
+            # For catalog voices, just pass the name directly (not a file path)
             logger.info(f"Loading built-in voice: {voice_name}")
-            voice_path = f"hf://kyutai/tts-voices/{voice_name}-mackenna/casual.wav"
             try:
-                self.voice_state = self.tts_model.get_state_for_audio_prompt(voice_path)
+                self.voice_state = self.tts_model.get_state_for_audio_prompt(voice_name)
                 logger.info(f"Voice '{voice_name}' loaded successfully")
             except Exception as e:
                 logger.warning(f"Failed to load voice '{voice_name}': {e}. Falling back to 'alba'")
-                voice_path = "hf://kyutai/tts-voices/alba-mackenna/casual.wav"
-                self.voice_state = self.tts_model.get_state_for_audio_prompt(voice_path)
+                self.voice_state = self.tts_model.get_state_for_audio_prompt("alba")
 
     def text_to_speech(self, text: str, output_file: str, audio_tags: AudioTags):
         """
