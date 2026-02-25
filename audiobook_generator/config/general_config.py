@@ -49,5 +49,8 @@ class GeneralConfig:
         self.piper_length_scale = getattr(args, 'piper_length_scale', None)
         self.piper_sentence_silence = getattr(args, 'piper_sentence_silence', None)
 
+        # TTS provider: Pocket-TTS specific arguments
+        self.pocket_voice = getattr(args, 'pocket_voice', None)
+
     def __str__(self):
         return ",\n".join(f"{key}={value}" for key, value in self.__dict__.items())
