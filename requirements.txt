@@ -6,7 +6,7 @@ requests==2.32.4
 edge-tts==7.2.7
 pydub==0.25.1
 wyoming==1.6.0
-gradio==5.50.0
+gradio==6.7.0
 docker==7.1.0
 sentencex==0.6.1
 gradio_log==0.0.8
