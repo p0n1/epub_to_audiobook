@@ -17,7 +17,7 @@ def handle_args():
         "--tts",
         choices=get_supported_tts_providers(),
         default=get_supported_tts_providers()[0],
-        help="Choose TTS provider (default: azure). azure: Azure Cognitive Services, openai: OpenAI TTS API. When using azure, environment variables MS_TTS_KEY and MS_TTS_REGION must be set. When using openai, environment variable OPENAI_API_KEY must be set.",
+        help="Choose TTS provider (default: azure). azure: Azure Cognitive Services, openai: OpenAI TTS API, edge: Microsoft Edge Read Aloud, piper: Piper local TTS, camb: CAMB AI TTS. When using azure, set MS_TTS_KEY and MS_TTS_REGION. When using openai, set OPENAI_API_KEY. When using camb, set CAMB_API_KEY.",
     )
     parser.add_argument(
         "--log",
@@ -201,6 +201,19 @@ def handle_args():
         "--piper_length_scale",
         default=1.0,
         help="Phoneme length, a.k.a. speaking rate",
+    )
+
+    camb_tts_group = parser.add_argument_group(title="camb specific")
+    camb_tts_group.add_argument(
+        "--speaking_rate",
+        default=None,
+        type=float,
+        help="Speaking rate for CAMB AI TTS. Adjusts the speed of speech output.",
+    )
+    camb_tts_group.add_argument(
+        "--camb_instructions",
+        default=None,
+        help="User instructions for CAMB AI TTS (style/tone guidance). Only supported with 'mars-instruct' model.",
     )
 
     args = parser.parse_args()
