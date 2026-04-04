@@ -186,6 +186,8 @@ usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--piper_path PIPER_PATH] [--piper_speaker PIPER_SPEAKER]
                [--piper_sentence_silence PIPER_SENTENCE_SILENCE]
                [--piper_length_scale PIPER_LENGTH_SCALE]
+               [--piper_noise_scale PIPER_NOISE_SCALE]
+               [--piper_noise_w_scale PIPER_NOISE_W_SCALE]
                input_file output_folder
 
 Convert text book to audiobook
@@ -308,6 +310,10 @@ piper specific:
                         Seconds of silence after each sentence
   --piper_length_scale PIPER_LENGTH_SCALE
                         Phoneme length, a.k.a. speaking rate
+  --piper_noise_scale PIPER_NOISE_SCALE
+                        Generator noise
+  --piper_noise_w_scale PIPER_NOISE_W_SCALE
+                        Phoneme width noise
 ```  
 
 **Example**:
