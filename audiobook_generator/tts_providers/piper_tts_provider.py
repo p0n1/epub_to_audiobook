@@ -239,7 +239,7 @@ class PiperTTSProvider(BaseTTSProvider):
         return 0  # Piper is free
 
     def get_break_string(self):
-        return "."  # Four spaces as the default break string
+        return ". "
 
     def get_output_file_extension(self):
         return self.config.output_format
