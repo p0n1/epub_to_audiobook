@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import tempfile
 from pathlib import Path
 from subprocess import run
@@ -35,6 +36,10 @@ class PiperTTSProvider(BaseTTSProvider):
         pass
 
     def text_to_speech(self, text: str, output_file: str, audio_tags: AudioTags):
+        # Piper-specific text processing
+        text = re.sub(r"[^\S\r\n]?[—–―…()][^\S\r\n]?", "; ", text)  # Add speech pause after: em dash, en dash, horizontal bar, ellipsis, (, )
+        logger.debug(f"After Piper-specific text processing: <{text[:100]}>")
+
         if self.config.piper_path:
             logger.info("Local Piper installation selected")
             self._text_to_speech_local(text, output_file, audio_tags)
@@ -239,7 +244,7 @@ class PiperTTSProvider(BaseTTSProvider):
         return 0  # Piper is free
 
     def get_break_string(self):
-        return "."  # Four spaces as the default break string
+        return ". "
 
     def get_output_file_extension(self):
         return self.config.output_format
