@@ -219,6 +219,7 @@ class PiperTTSProvider(BaseTTSProvider):
             run(
                 cmd,
                 input=text.encode("utf-8"),
+                check=True,
             )
 
             # set audio tags, need to be done before conversion or opus won't work, not sure why
