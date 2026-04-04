@@ -202,6 +202,16 @@ def handle_args():
         default=1.0,
         help="Phoneme length, a.k.a. speaking rate",
     )
+    piper_tts_group.add_argument(
+		'--piper_noise_scale',
+		type=float,
+		help='Generator noise',
+    )
+    piper_tts_group.add_argument(
+		'--piper_noise_w_scale',
+		type=float,
+		help='Phoneme width noise',
+    )
 
     args = parser.parse_args()
     return GeneralConfig(args)

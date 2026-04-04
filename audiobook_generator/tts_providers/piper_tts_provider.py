@@ -201,10 +201,6 @@ class PiperTTSProvider(BaseTTSProvider):
                 voice_model_path,
                 "--speaker",
                 str(self.config.piper_speaker),
-                "--noise_scale",
-                str(self.config.piper_noise_scale),
-                " --noise_w",
-                str(self.config.piper_noise_w_scale),
                 "--sentence_silence",
                 str(self.config.piper_sentence_silence),
                 "--length_scale",
@@ -212,6 +208,16 @@ class PiperTTSProvider(BaseTTSProvider):
                 "-f",
                 tmpfilename
             ]
+            if self.config.piper_noise_scale is not None:
+                cmd += [
+                    "--noise_scale",
+                    str(self.config.piper_noise_scale),
+                ]
+            if self.config.piper_noise_w_scale is not None:
+                cmd += [
+                    "--noise_w",
+                    str(self.config.piper_noise_w_scale),
+                ]
 
             logger.info(
                 f"Running Piper TTS command: {' '.join(str(arg) for arg in cmd)}"
@@ -219,6 +225,7 @@ class PiperTTSProvider(BaseTTSProvider):
             run(
                 cmd,
                 input=text.encode("utf-8"),
+                check=True,
             )
 
             # set audio tags, need to be done before conversion or opus won't work, not sure why
