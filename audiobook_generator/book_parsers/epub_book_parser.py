@@ -8,6 +8,7 @@ from ebooklib import epub
 
 from audiobook_generator.book_parsers.base_book_parser import BaseBookParser
 from audiobook_generator.config.general_config import GeneralConfig
+from audiobook_generator.core.cover_image import CoverImage
 
 logger = logging.getLogger(__name__)
 
@@ -39,16 +40,16 @@ class EpubBookParser(BaseBookParser):
             return self.book.get_metadata("DC", "creator")[0][0]
         return "Unknown"
 
-    def get_book_cover(self) -> Tuple[Optional[bytes], Optional[str]]:
-        """Return (cover_image_bytes, mime_type) or (None, None) if not found."""
+    def get_book_cover(self) -> Optional[CoverImage]:
+        """Return a CoverImage, or None if no cover is found."""
         # 1. Items explicitly typed as cover
         for item in self.book.get_items_of_type(ebooklib.ITEM_COVER):
-            return item.get_content(), item.media_type
+            return CoverImage(data=item.get_content(), mime=item.media_type)
 
         # 2. Item with id 'cover' that is an image
         cover_item = self.book.get_item_with_id('cover')
         if cover_item and cover_item.media_type.startswith('image/'):
-            return cover_item.get_content(), cover_item.media_type
+            return CoverImage(data=cover_item.get_content(), mime=cover_item.media_type)
 
         # 3. OPF metadata <meta name="cover" content="<id>"/>
         meta = self.book.get_metadata('OPF', 'cover')
@@ -57,15 +58,15 @@ class EpubBookParser(BaseBookParser):
             if cover_id:
                 cover_item = self.book.get_item_with_id(cover_id)
                 if cover_item:
-                    return cover_item.get_content(), cover_item.media_type
+                    return CoverImage(data=cover_item.get_content(), mime=cover_item.media_type)
 
         # 4. Fallback: first image whose name contains 'cover'
         for item in self.book.get_items_of_type(ebooklib.ITEM_IMAGE):
             if 'cover' in item.file_name.lower():
-                return item.get_content(), item.media_type
+                return CoverImage(data=item.get_content(), mime=item.media_type)
 
         logger.warning("No cover image found in EPUB")
-        return None, None
+        return None
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []

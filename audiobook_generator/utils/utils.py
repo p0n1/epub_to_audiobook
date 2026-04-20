@@ -158,13 +158,13 @@ def set_audio_tags(output_file, audio_tags):
         tags.add(TPE1(encoding=3, text=audio_tags.author))
         tags.add(TALB(encoding=3, text=audio_tags.book_title))
         tags.add(TRCK(encoding=3, text=str(audio_tags.idx)))
-        if audio_tags.cover_data and audio_tags.cover_mime:
+        if audio_tags.cover:
             tags.add(APIC(
                 encoding=3,
-                mime=audio_tags.cover_mime,
+                mime=audio_tags.cover.mime,
                 type=3,  # front cover
                 desc='Cover',
-                data=audio_tags.cover_data,
+                data=audio_tags.cover.data,
             ))
         tags.save(output_file)
     except Exception as e:

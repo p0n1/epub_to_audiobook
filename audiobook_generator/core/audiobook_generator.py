@@ -55,8 +55,7 @@ def get_total_chars(chapters):
 class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
-        self.cover_data = None
-        self.cover_mime = None
+        self.cover = None
 
     def __str__(self) -> str:
         return f"{self.config}"
@@ -97,7 +96,7 @@ class AudiobookGenerator:
 
             audio_tags = AudioTags(
                 title, book_parser.get_book_author(), book_parser.get_book_title(), idx,
-                self.cover_data, self.cover_mime,
+                self.cover,
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
@@ -127,14 +126,12 @@ class AudiobookGenerator:
             logger.info(f"Book title: {book_title}")
             logger.info(f"Book author: {book_author}")
 
-            cover_data, cover_mime = book_parser.get_book_cover()
-            self.cover_data = cover_data
-            self.cover_mime = cover_mime
-            if cover_data:
-                ext = _ext_for_mime(cover_mime)
+            self.cover = book_parser.get_book_cover()
+            if self.cover:
+                ext = _ext_for_mime(self.cover.mime)
                 cover_path = os.path.join(self.config.output_folder, f"cover.{ext}")
                 with open(cover_path, 'wb') as f:
-                    f.write(cover_data)
+                    f.write(self.cover.data)
                 logger.info(f"Cover saved: {cover_path}")
 
             chapters = book_parser.get_chapters(tts_provider.get_break_string())

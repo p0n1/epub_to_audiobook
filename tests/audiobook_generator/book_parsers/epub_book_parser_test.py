@@ -1,10 +1,11 @@
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock
 
 import ebooklib
 
 from audiobook_generator.book_parsers.base_book_parser import get_book_parser
 from audiobook_generator.book_parsers.epub_book_parser import EpubBookParser
+from audiobook_generator.core.cover_image import CoverImage
 from tests.test_utils import get_azure_config
 
 
@@ -38,11 +39,10 @@ class TestGetBookCover(unittest.TestCase):
         self.parser = get_book_parser(self.config)
 
     def test_cover_extracted_from_real_epub(self):
-        cover_data, cover_mime = self.parser.get_book_cover()
-        self.assertIsNotNone(cover_data)
-        self.assertIsInstance(cover_data, bytes)
-        self.assertGreater(len(cover_data), 0)
-        self.assertEqual(cover_mime, 'image/png')
+        cover = self.parser.get_book_cover()
+        self.assertIsInstance(cover, CoverImage)
+        self.assertGreater(len(cover.data), 0)
+        self.assertEqual(cover.mime, 'image/png')
 
     def test_cover_strategy_item_cover_type(self):
         """Strategy 1: item typed as ITEM_COVER."""
@@ -53,30 +53,27 @@ class TestGetBookCover(unittest.TestCase):
         self.parser.book = MagicMock()
         self.parser.book.get_items_of_type.side_effect = lambda t: [mock_item] if t == ebooklib.ITEM_COVER else []
 
-        data, mime = self.parser.get_book_cover()
-        self.assertEqual(data, b'cover-bytes')
-        self.assertEqual(mime, 'image/jpeg')
+        cover = self.parser.get_book_cover()
+        self.assertEqual(cover, CoverImage(data=b'cover-bytes', mime='image/jpeg'))
 
     def test_cover_strategy_item_by_id(self):
         """Strategy 2: item with id 'cover' that is an image."""
         self.parser.book = MagicMock()
-        self.parser.book.get_items_of_type.return_value = []  # no ITEM_COVER
+        self.parser.book.get_items_of_type.return_value = []
 
         mock_item = MagicMock()
         mock_item.media_type = 'image/jpeg'
         mock_item.get_content.return_value = b'id-cover-bytes'
         self.parser.book.get_item_with_id.return_value = mock_item
 
-        data, mime = self.parser.get_book_cover()
-        self.assertEqual(data, b'id-cover-bytes')
-        self.assertEqual(mime, 'image/jpeg')
+        cover = self.parser.get_book_cover()
+        self.assertEqual(cover, CoverImage(data=b'id-cover-bytes', mime='image/jpeg'))
 
     def test_cover_strategy_opf_metadata(self):
         """Strategy 3: OPF <meta name='cover' content='<id>'>."""
         self.parser.book = MagicMock()
-        self.parser.book.get_items_of_type.return_value = []  # no ITEM_COVER
+        self.parser.book.get_items_of_type.return_value = []
 
-        # 'cover' id item is not an image (so strategy 2 is skipped)
         non_image_item = MagicMock()
         non_image_item.media_type = 'application/xhtml+xml'
 
@@ -90,16 +87,13 @@ class TestGetBookCover(unittest.TestCase):
         self.parser.book.get_item_with_id.side_effect = get_item_by_id
         self.parser.book.get_metadata.return_value = [(None, {'content': 'cover-image-id'})]
 
-        data, mime = self.parser.get_book_cover()
-        self.assertEqual(data, b'opf-cover-bytes')
-        self.assertEqual(mime, 'image/png')
+        cover = self.parser.get_book_cover()
+        self.assertEqual(cover, CoverImage(data=b'opf-cover-bytes', mime='image/png'))
 
     def test_cover_strategy_filename_contains_cover(self):
         """Strategy 4: first image whose filename contains 'cover'."""
         self.parser.book = MagicMock()
 
-        # Strategy 1: no ITEM_COVER items; strategy 2: no 'cover' id item;
-        # strategy 3: no OPF metadata
         def get_items_of_type(t):
             if t == ebooklib.ITEM_COVER:
                 return []
@@ -115,20 +109,17 @@ class TestGetBookCover(unittest.TestCase):
         self.parser.book.get_item_with_id.return_value = None
         self.parser.book.get_metadata.return_value = []
 
-        data, mime = self.parser.get_book_cover()
-        self.assertEqual(data, b'filename-cover-bytes')
-        self.assertEqual(mime, 'image/jpeg')
+        cover = self.parser.get_book_cover()
+        self.assertEqual(cover, CoverImage(data=b'filename-cover-bytes', mime='image/jpeg'))
 
     def test_cover_returns_none_when_not_found(self):
-        """All strategies fail → (None, None)."""
+        """All strategies fail → None."""
         self.parser.book = MagicMock()
         self.parser.book.get_items_of_type.return_value = []
         self.parser.book.get_item_with_id.return_value = None
         self.parser.book.get_metadata.return_value = []
 
-        data, mime = self.parser.get_book_cover()
-        self.assertIsNone(data)
-        self.assertIsNone(mime)
+        self.assertIsNone(self.parser.get_book_cover())
 
 
 if __name__ == '__main__':

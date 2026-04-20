@@ -1,6 +1,7 @@
 from typing import List, Optional, Tuple
 
 from audiobook_generator.config.general_config import GeneralConfig
+from audiobook_generator.core.cover_image import CoverImage
 
 EPUB = "epub"
 
@@ -26,8 +27,8 @@ class BaseBookParser:  # Base interface for books parsers
     def get_book_author(self) -> str:
         raise NotImplementedError
 
-    def get_book_cover(self) -> Tuple[Optional[bytes], Optional[str]]:
-        """Return (cover_image_bytes, mime_type) or (None, None) if not found."""
+    def get_book_cover(self) -> Optional[CoverImage]:
+        """Return a CoverImage, or None if no cover is found."""
         raise NotImplementedError
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:

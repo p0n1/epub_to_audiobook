@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from audiobook_generator.core.audio_tags import AudioTags
 from audiobook_generator.core.audiobook_generator import _ext_for_mime
+from audiobook_generator.core.cover_image import CoverImage
 from audiobook_generator.utils.utils import set_audio_tags
 
 
@@ -33,30 +34,27 @@ class TestAudioTagsDataclass(unittest.TestCase):
 
     def test_defaults_no_cover(self):
         tags = AudioTags(title="Ch1", author="Author", book_title="Book", idx=1)
-        self.assertIsNone(tags.cover_data)
-        self.assertIsNone(tags.cover_mime)
+        self.assertIsNone(tags.cover)
 
     def test_with_cover(self):
-        tags = AudioTags(
-            title="Ch1", author="Author", book_title="Book", idx=1,
-            cover_data=b'\xff\xd8\xff', cover_mime='image/jpeg',
-        )
-        self.assertEqual(tags.cover_data, b'\xff\xd8\xff')
-        self.assertEqual(tags.cover_mime, 'image/jpeg')
+        cover = CoverImage(data=b'\xff\xd8\xff', mime='image/jpeg')
+        tags = AudioTags(title="Ch1", author="Author", book_title="Book", idx=1, cover=cover)
+        self.assertEqual(tags.cover.data, b'\xff\xd8\xff')
+        self.assertEqual(tags.cover.mime, 'image/jpeg')
 
 
 class TestSetAudioTagsCoverEmbedding(unittest.TestCase):
-    """Verify that set_audio_tags writes an APIC frame iff cover data is present."""
+    """Verify that set_audio_tags writes an APIC frame iff cover is present."""
 
-    def _make_tags(self, **kwargs):
-        return AudioTags(title="Ch", author="Auth", book_title="Book", idx=1, **kwargs)
+    def _make_tags(self, cover=None):
+        return AudioTags(title="Ch", author="Auth", book_title="Book", idx=1, cover=cover)
 
     @patch('audiobook_generator.utils.utils.ID3')
     def test_apic_written_when_cover_present(self, mock_id3_cls):
         mock_tags = MagicMock()
         mock_id3_cls.return_value = mock_tags
 
-        audio_tags = self._make_tags(cover_data=b'imgbytes', cover_mime='image/jpeg')
+        audio_tags = self._make_tags(cover=CoverImage(data=b'imgbytes', mime='image/jpeg'))
         set_audio_tags('fake.mp3', audio_tags)
 
         added_frames = [call.args[0] for call in mock_tags.add.call_args_list]
@@ -138,7 +136,7 @@ class TestAudiobookGeneratorCoverSaving(unittest.TestCase):
 
     def test_cover_file_saved(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            self._run_generator(tmpdir, (b'pngdata', 'image/png'))
+            self._run_generator(tmpdir, CoverImage(data=b'pngdata', mime='image/png'))
 
             cover_path = os.path.join(tmpdir, 'cover.png')
             self.assertTrue(os.path.exists(cover_path))
@@ -147,7 +145,7 @@ class TestAudiobookGeneratorCoverSaving(unittest.TestCase):
 
     def test_no_cover_file_when_epub_has_none(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            self._run_generator(tmpdir, (None, None))
+            self._run_generator(tmpdir, None)
 
             cover_files = [f for f in os.listdir(tmpdir) if f.startswith('cover.')]
             self.assertEqual(cover_files, [])
