@@ -111,8 +111,6 @@ class AudiobookGenerator:
                 with open(cover_path, 'wb') as f:
                     f.write(cover_data)
                 logger.info(f"Cover saved: {cover_path}")
-            else:
-                logger.info("No cover image found in EPUB")
 
             chapters = book_parser.get_chapters(tts_provider.get_break_string())
             # Filter out empty or very short chapters
