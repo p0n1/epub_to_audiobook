@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from audiobook_generator.config.general_config import GeneralConfig
 
@@ -24,6 +24,10 @@ class BaseBookParser:  # Base interface for books parsers
         raise NotImplementedError
 
     def get_book_author(self) -> str:
+        raise NotImplementedError
+
+    def get_book_cover(self) -> Tuple[Optional[bytes], Optional[str]]:
+        """Return (cover_image_bytes, mime_type) or (None, None) if not found."""
         raise NotImplementedError
 
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:

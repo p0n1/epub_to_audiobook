@@ -4,7 +4,7 @@ import tempfile
 import os
 import io
 from pydub import AudioSegment
-from mutagen.id3._frames import TIT2, TPE1, TALB, TRCK
+from mutagen.id3._frames import TIT2, TPE1, TALB, TRCK, APIC
 from mutagen.id3 import ID3, ID3NoHeaderError
 from typing import List
 from sentencex import segment
@@ -158,6 +158,14 @@ def set_audio_tags(output_file, audio_tags):
         tags.add(TPE1(encoding=3, text=audio_tags.author))
         tags.add(TALB(encoding=3, text=audio_tags.book_title))
         tags.add(TRCK(encoding=3, text=str(audio_tags.idx)))
+        if audio_tags.cover_data and audio_tags.cover_mime:
+            tags.add(APIC(
+                encoding=3,
+                mime=audio_tags.cover_mime,
+                type=3,  # front cover
+                desc='Cover',
+                data=audio_tags.cover_data,
+            ))
         tags.save(output_file)
     except Exception as e:
         logger.error(f"Error while setting audio tags: {e}, {output_file}")

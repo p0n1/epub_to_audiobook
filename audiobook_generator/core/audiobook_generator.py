@@ -34,7 +34,7 @@ class AudiobookGenerator:
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def process_chapter(self, idx, title, text, book_parser):
+    def process_chapter(self, idx, title, text, book_parser, cover_data=None, cover_mime=None):
         """Process a single chapter: write text (if needed) and convert to audio."""
         try:
             logger.info(f"Processing chapter {idx}: {title}")
@@ -69,7 +69,8 @@ class AudiobookGenerator:
             output_file = os.path.join(self.config.output_folder, safe_audio_name)
 
             audio_tags = AudioTags(
-                title, book_parser.get_book_author(), book_parser.get_book_title(), idx
+                title, book_parser.get_book_author(), book_parser.get_book_title(), idx,
+                cover_data, cover_mime,
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
@@ -82,8 +83,8 @@ class AudiobookGenerator:
 
     def process_chapter_wrapper(self, args):
         """Wrapper for process_chapter to handle unpacking args for imap."""
-        idx, title, text, book_parser = args
-        return idx, self.process_chapter(idx, title, text, book_parser)
+        idx, title, text, book_parser, cover_data, cover_mime = args
+        return idx, self.process_chapter(idx, title, text, book_parser, cover_data, cover_mime)
 
     def run(self):
         try:
@@ -92,6 +93,23 @@ class AudiobookGenerator:
             tts_provider = get_tts_provider(self.config)
 
             os.makedirs(self.config.output_folder, exist_ok=True)
+
+            # Log and save book metadata
+            book_title = book_parser.get_book_title()
+            book_author = book_parser.get_book_author()
+            logger.info(f"Book title: {book_title}")
+            logger.info(f"Book author: {book_author}")
+
+            cover_data, cover_mime = book_parser.get_book_cover()
+            if cover_data:
+                ext = cover_mime.split('/')[-1] if cover_mime else 'jpg'
+                cover_path = os.path.join(self.config.output_folder, f"cover.{ext}")
+                with open(cover_path, 'wb') as f:
+                    f.write(cover_data)
+                logger.info(f"Cover saved: {cover_path}")
+            else:
+                logger.info("No cover image found in EPUB")
+
             chapters = book_parser.get_chapters(tts_provider.get_break_string())
             # Filter out empty or very short chapters
             chapters = [(title, text) for title, text in chapters if text.strip()]
@@ -137,7 +155,7 @@ class AudiobookGenerator:
             # Prepare chapters for processing
             chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             tasks = [
-                (idx, title, text, book_parser)
+                (idx, title, text, book_parser, cover_data, cover_mime)
                 for idx, (title, text) in enumerate(
                     chapters_to_process, start=self.config.chapter_start
                 )

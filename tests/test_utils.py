@@ -14,6 +14,8 @@ def get_azure_config():
         chapter_start=1,
         chapter_end=-1,
         remove_endnotes=False,
+        remove_reference_numbers=False,
+        search_and_replace_file=None,
         tts='azure',
         language='en-US',
         voice_name='en-US-GuyNeural',
