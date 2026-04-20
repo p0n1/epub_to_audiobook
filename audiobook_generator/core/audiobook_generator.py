@@ -56,11 +56,13 @@ class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
         self.cover = None
+        self.book_title = None
+        self.book_author = None
 
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def process_chapter(self, idx, title, text, book_parser):
+    def process_chapter(self, idx, title, text):
         """Process a single chapter: write text (if needed) and convert to audio."""
         try:
             logger.info(f"Processing chapter {idx}: {title}")
@@ -95,7 +97,7 @@ class AudiobookGenerator:
             output_file = os.path.join(self.config.output_folder, safe_audio_name)
 
             audio_tags = AudioTags(
-                title, book_parser.get_book_author(), book_parser.get_book_title(), idx,
+                title, self.book_author, self.book_title, idx,
                 self.cover,
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
@@ -109,8 +111,8 @@ class AudiobookGenerator:
 
     def process_chapter_wrapper(self, args):
         """Wrapper for process_chapter to handle unpacking args for imap."""
-        idx, title, text, book_parser = args
-        return idx, self.process_chapter(idx, title, text, book_parser)
+        idx, title, text = args
+        return idx, self.process_chapter(idx, title, text)
 
     def run(self):
         try:
@@ -121,10 +123,10 @@ class AudiobookGenerator:
             os.makedirs(self.config.output_folder, exist_ok=True)
 
             # Log and save book metadata
-            book_title = book_parser.get_book_title()
-            book_author = book_parser.get_book_author()
-            logger.info(f"Book title: {book_title}")
-            logger.info(f"Book author: {book_author}")
+            self.book_title = book_parser.get_book_title()
+            self.book_author = book_parser.get_book_author()
+            logger.info(f"Book title: {self.book_title}")
+            logger.info(f"Book author: {self.book_author}")
 
             self.cover = book_parser.get_book_cover()
             if self.cover:
@@ -179,7 +181,7 @@ class AudiobookGenerator:
             # Prepare chapters for processing
             chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             tasks = [
-                (idx, title, text, book_parser)
+                (idx, title, text)
                 for idx, (title, text) in enumerate(
                     chapters_to_process, start=self.config.chapter_start
                 )
