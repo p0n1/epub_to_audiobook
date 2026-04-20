@@ -4,7 +4,29 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from audiobook_generator.core.audio_tags import AudioTags
+from audiobook_generator.core.audiobook_generator import _ext_for_mime
 from audiobook_generator.utils.utils import set_audio_tags
+
+
+class TestExtForMime(unittest.TestCase):
+
+    def test_jpeg_returns_jpg(self):
+        self.assertEqual(_ext_for_mime('image/jpeg'), 'jpg')
+
+    def test_png(self):
+        self.assertEqual(_ext_for_mime('image/png'), 'png')
+
+    def test_svg_xml(self):
+        self.assertEqual(_ext_for_mime('image/svg+xml'), 'svg')
+
+    def test_none_defaults_to_jpg(self):
+        self.assertEqual(_ext_for_mime(None), 'jpg')
+
+    def test_empty_string_defaults_to_jpg(self):
+        self.assertEqual(_ext_for_mime(''), 'jpg')
+
+    def test_unknown_mime_defaults_to_jpg(self):
+        self.assertEqual(_ext_for_mime('image/x-unknown-format'), 'jpg')
 
 
 class TestAudioTagsDataclass(unittest.TestCase):

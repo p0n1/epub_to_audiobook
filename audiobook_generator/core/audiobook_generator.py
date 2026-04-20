@@ -1,4 +1,5 @@
 import logging
+import mimetypes
 import multiprocessing
 import os
 
@@ -10,6 +11,30 @@ from audiobook_generator.utils.log_handler import setup_logging
 from audiobook_generator.utils.filename_sanitizer import make_safe_filename
 
 logger = logging.getLogger(__name__)
+
+
+_MIME_TO_EXT = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+    'image/tiff': 'tiff',
+    'image/bmp': 'bmp',
+}
+
+
+def _ext_for_mime(mime: str) -> str:
+    """Return a safe file extension for an image MIME type, defaulting to 'jpg'."""
+    if not mime:
+        return 'jpg'
+    if mime in _MIME_TO_EXT:
+        return _MIME_TO_EXT[mime]
+    # Fall back to mimetypes stdlib (strips the leading dot)
+    ext = mimetypes.guess_extension(mime)
+    if ext:
+        return ext.lstrip('.')
+    return 'jpg'
 
 
 def confirm_conversion():
@@ -106,7 +131,7 @@ class AudiobookGenerator:
             self.cover_data = cover_data
             self.cover_mime = cover_mime
             if cover_data:
-                ext = cover_mime.split('/')[-1] if cover_mime else 'jpg'
+                ext = _ext_for_mime(cover_mime)
                 cover_path = os.path.join(self.config.output_folder, f"cover.{ext}")
                 with open(cover_path, 'wb') as f:
                     f.write(cover_data)
