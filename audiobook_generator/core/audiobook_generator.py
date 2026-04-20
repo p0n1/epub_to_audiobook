@@ -30,11 +30,13 @@ def get_total_chars(chapters):
 class AudiobookGenerator:
     def __init__(self, config: GeneralConfig):
         self.config = config
+        self.cover_data = None
+        self.cover_mime = None
 
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def process_chapter(self, idx, title, text, book_parser, cover_data=None, cover_mime=None):
+    def process_chapter(self, idx, title, text, book_parser):
         """Process a single chapter: write text (if needed) and convert to audio."""
         try:
             logger.info(f"Processing chapter {idx}: {title}")
@@ -70,7 +72,7 @@ class AudiobookGenerator:
 
             audio_tags = AudioTags(
                 title, book_parser.get_book_author(), book_parser.get_book_title(), idx,
-                cover_data, cover_mime,
+                self.cover_data, self.cover_mime,
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
@@ -83,8 +85,8 @@ class AudiobookGenerator:
 
     def process_chapter_wrapper(self, args):
         """Wrapper for process_chapter to handle unpacking args for imap."""
-        idx, title, text, book_parser, cover_data, cover_mime = args
-        return idx, self.process_chapter(idx, title, text, book_parser, cover_data, cover_mime)
+        idx, title, text, book_parser = args
+        return idx, self.process_chapter(idx, title, text, book_parser)
 
     def run(self):
         try:
@@ -101,6 +103,8 @@ class AudiobookGenerator:
             logger.info(f"Book author: {book_author}")
 
             cover_data, cover_mime = book_parser.get_book_cover()
+            self.cover_data = cover_data
+            self.cover_mime = cover_mime
             if cover_data:
                 ext = cover_mime.split('/')[-1] if cover_mime else 'jpg'
                 cover_path = os.path.join(self.config.output_folder, f"cover.{ext}")
@@ -155,7 +159,7 @@ class AudiobookGenerator:
             # Prepare chapters for processing
             chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             tasks = [
-                (idx, title, text, book_parser, cover_data, cover_mime)
+                (idx, title, text, book_parser)
                 for idx, (title, text) in enumerate(
                     chapters_to_process, start=self.config.chapter_start
                 )
