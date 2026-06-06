@@ -1,12 +1,11 @@
 import logging
-from typing import List
+from typing import List, Tuple
 import tempfile
 import os
 import io
 from pydub import AudioSegment
 from mutagen.id3._frames import TIT2, TPE1, TALB, TRCK
 from mutagen.id3 import ID3, ID3NoHeaderError
-from typing import List
 from sentencex import segment
 import os
 
@@ -274,3 +273,147 @@ def merge_audio_segments(audio_segments: List[io.BytesIO], output_file: str, out
         logger.info(f"Using direct write to merge audio segments: {chunk_ids}")
         # Direct write audio segments to output file
         direct_merge_audio_segments(audio_segments, output_file)
+
+
+def detect_language(text: str) -> str:
+    """
+    Detect the primary language of a text segment.
+    Returns 'zh' for Chinese, 'en' for English, or 'mixed' for both.
+    
+    Args:
+        text: The text to analyze
+        
+    Returns:
+        'zh', 'en', or 'mixed'
+    """
+    chinese_chars = 0
+    english_chars = 0
+    
+    for char in text:
+        if '\u4e00' <= char <= '\u9fff':  # Chinese character range
+            chinese_chars += 1
+        elif char.isalpha() and char.isascii():  # English letters
+            english_chars += 1
+    
+    total_chars = chinese_chars + english_chars
+    if total_chars == 0:
+        return 'en'  # Default to English for empty or punctuation-only text
+    
+    chinese_ratio = chinese_chars / total_chars
+    english_ratio = english_chars / total_chars
+    
+    # Consider it mixed if both languages make up at least 20% of the text
+    if chinese_ratio > 0.2 and english_ratio > 0.2:
+        return 'mixed'
+    elif chinese_ratio > english_ratio:
+        return 'zh'
+    else:
+        return 'en'
+
+
+def split_mixed_language_text(text: str) -> List[Tuple[str, str]]:
+    """
+    Split text that contains mixed Chinese and English into segments by language.
+    Uses a smarter approach that groups continuous runs of the same script.
+    
+    Args:
+        text: The text to split
+        
+    Returns:
+        List of (text_segment, language) tuples
+    """
+    segments = split_mixed_by_chars(text)
+    
+    # Merge tiny segments (less than 3 chars) into adjacent segments of the other language
+    if len(segments) <= 1:
+        return segments
+    
+    merged = []
+    i = 0
+    while i < len(segments):
+        seg_text, seg_lang = segments[i]
+        
+        # If this segment is very short (likely punctuation/brackets between languages),
+        # merge it with the previous segment
+        if len(seg_text.strip()) < 3 and merged:
+            # Merge into previous segment
+            prev_text, prev_lang = merged[-1]
+            merged[-1] = (prev_text + seg_text, prev_lang)
+        else:
+            merged.append((seg_text, seg_lang))
+        i += 1
+    
+    # Second pass: merge consecutive segments of the same language
+    if len(merged) <= 1:
+        return merged
+    
+    final = [merged[0]]
+    for seg_text, seg_lang in merged[1:]:
+        prev_text, prev_lang = final[-1]
+        if seg_lang == prev_lang:
+            final[-1] = (prev_text + seg_text, prev_lang)
+        else:
+            final.append((seg_text, seg_lang))
+    
+    return final
+
+
+def split_mixed_by_chars(text: str) -> List[Tuple[str, str]]:
+    """
+    Split mixed language text by script runs.
+    Groups consecutive characters of the same script (Chinese/English) together.
+    Punctuation, numbers, and spaces are assigned to the surrounding language context.
+    
+    Args:
+        text: The text to split
+        
+    Returns:
+        List of (text_segment, language) tuples
+    """
+    segments = []
+    current_segment = ""
+    current_lang = None
+    pending_neutral = ""  # Buffer for punctuation/numbers/spaces
+    
+    for char in text:
+        if '\u4e00' <= char <= '\u9fff':  # Chinese character
+            char_lang = 'zh'
+        elif char.isalpha() and char.isascii():  # English letter
+            char_lang = 'en'
+        else:
+            char_lang = 'neutral'  # punctuation, numbers, spaces, etc.
+        
+        if char_lang == 'neutral':
+            # Accumulate neutral characters - they'll be assigned to the next non-neutral language
+            pending_neutral += char
+        else:
+            # We hit a language-specific character
+            if current_lang is None:
+                # First language character
+                current_segment = pending_neutral + char
+                current_lang = char_lang
+                pending_neutral = ""
+            elif char_lang == current_lang:
+                # Same language, append pending neutral chars and current char
+                current_segment += pending_neutral + char
+                pending_neutral = ""
+            else:
+                # Language changed!
+                # Save current segment (with pending neutral assigned to it)
+                current_segment += pending_neutral
+                if current_segment.strip():
+                    segments.append((current_segment.strip(), current_lang))
+                # Start new segment (the pending neutral was already consumed)
+                current_segment = char
+                current_lang = char_lang
+                pending_neutral = ""
+    
+    # Handle remaining content
+    current_segment += pending_neutral
+    if current_segment.strip():
+        if current_lang is None:
+            # All neutral characters (no Chinese or English), default to 'en'
+            current_lang = 'en'
+        segments.append((current_segment.strip(), current_lang))
+    
+    return segments

@@ -139,6 +139,30 @@ def handle_args():
         help="Instructions for the TTS model. Only supported for 'gpt-4o-mini-tts' model.",
     )
 
+    openai_tts_group.add_argument(
+        "--english_voice_name",
+        help="Voice to use for English text segments in mixed Chinese-English content (OpenAI TTS only). "
+             "If not specified, defaults to 'alloy'. Useful when the primary voice (e.g., kokoro) "
+             "doesn't handle English pronunciation well.",
+    )
+
+    openai_tts_group.add_argument(
+        "--sentence_interval",
+        type=int,
+        default=0,
+        help="Silence duration in milliseconds inserted between consecutive sentences within "
+             "a paragraph (OpenAI TTS only). 0 means no extra pause beyond what the TTS engine "
+             "naturally produces. Example: --sentence_interval 500 (default: 0).",
+    )
+
+    openai_tts_group.add_argument(
+        "--paragraph_interval",
+        type=int,
+        default=1250,
+        help="Silence duration in milliseconds inserted between paragraphs and after chapter "
+             "headings/titles (OpenAI TTS only). (default: 1250).",
+    )
+
     edge_tts_group = parser.add_argument_group(title="edge specific")
     edge_tts_group.add_argument(
         "--voice_rate",
