@@ -30,6 +30,9 @@ class GeneralConfig:
         # OpenAI specific arguments
         self.instructions = getattr(args, 'instructions', None)
         self.speed = getattr(args, 'speed', None)
+        self.english_voice_name = getattr(args, 'english_voice_name', None)
+        self.sentence_interval = getattr(args, 'sentence_interval', None)
+        self.paragraph_interval = getattr(args, 'paragraph_interval', None)
 
         # TTS provider: Azure & Edge TTS specific arguments
         self.break_duration = getattr(args, 'break_duration', None)

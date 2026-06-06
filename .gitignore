@@ -45,3 +45,4 @@ piper_models/*
 test.py
 
 logs/
+output/
