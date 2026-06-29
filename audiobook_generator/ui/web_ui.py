@@ -162,9 +162,9 @@ def host_ui(config):
                                      interactive=True, info="Choose the parse mode for chapter title.")
             new_line_mode = gr.Dropdown(["single", "double", "none"], label="New Line Mode", value="double",
                                  interactive=True, info="Choose the mode of detecting new paragraphs")
-            chapter_start = gr.Slider(minimum=1, maximum=100, step=1, label="Chapter Start", value=1,
+            chapter_start = gr.Slider(minimum=1, maximum=9999, step=1, label="Chapter Start", value=1,
                                       interactive=True, info="Select chapter start index (default: 1)")
-            chapter_end = gr.Slider(minimum=-1, maximum=100, step=1, label="Chapter End", value=-1,
+            chapter_end = gr.Slider(minimum=-1, maximum=9999, step=1, label="Chapter End", value=-1,
                                     interactive=True, info="Chapter end index (default: -1, means last chapter)")
             with gr.Column():
                 remove_endnotes = gr.Checkbox(label="Remove Endnotes", value=False, info="Remove endnotes from text")
