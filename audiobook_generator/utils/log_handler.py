@@ -18,6 +18,7 @@ def setup_logging(log_level, log_file=None, is_worker=False):
     root_logger = logging.getLogger()
     for handler in root_logger.handlers[:]:
         root_logger.removeHandler(handler)
+        handler.close()
     root_logger.setLevel(log_level)
 
     console_handler = logging.StreamHandler()

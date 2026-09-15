@@ -178,7 +178,7 @@ usage: main.py [-h] [--tts {azure,openai,edge,piper}]
                [--chapter_start CHAPTER_START] [--chapter_end CHAPTER_END]
                [--output_text] [--remove_endnotes]
                [--search_and_replace_file SEARCH_AND_REPLACE_FILE]
-               [--worker_count WORKER_COUNT]
+               [--worker_count WORKER_COUNT] [--skip_existing]
                [--voice_name VOICE_NAME] [--output_format OUTPUT_FORMAT]
                [--model_name MODEL_NAME] [--voice_rate VOICE_RATE]
                [--voice_volume VOICE_VOLUME] [--voice_pitch VOICE_PITCH]
@@ -247,6 +247,9 @@ options:
   --remove_endnotes     This will remove endnote numbers from the end or
                         middle of sentences. This is useful for academic
                         books.
+  --skip_existing       Skip generating audio for a chapter if its output mp3
+                        file already exists in the output folder. Useful for
+                        resuming interrupted conversions.
   --search_and_replace_file SEARCH_AND_REPLACE_FILE
                         Path to a file that contains 1 regex replace per line,
                         to help with fixing pronunciations, etc. The format

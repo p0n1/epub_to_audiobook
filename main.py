@@ -91,6 +91,12 @@ def handle_args():
     )
 
     parser.add_argument(
+        "--skip_existing",
+        action="store_true",
+        help="Skip generating audio for a chapter if its output mp3 file already exists in the output folder. Useful for resuming interrupted conversions.",
+    )
+
+    parser.add_argument(
         "--worker_count",
         type=int,
         default=1,

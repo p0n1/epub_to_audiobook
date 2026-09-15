@@ -211,20 +211,25 @@ def pydub_merge_audio_segments(tmp_files: List[str], output_file: str, output_fo
     if not tmp_files:
         logger.warning("No temporary files to merge")
         return
-        
-    combined = AudioSegment.empty()
-    for tmp_file in tmp_files:
-        logger.debug(f"Loading chunk from temporary file: {tmp_file}")
-        segment = AudioSegment.from_file(tmp_file)
-        combined += segment
-        
-    # Export to final output file
-    logger.debug(f"Exporting to final output file: {output_file}")
-    combined.export(output_file, format=output_format)
-    logger.debug(f"Final output file exported: {output_file}")
 
-    # Delete the temporary files
-    for tmp_file in tmp_files:
+    try:
+        combined = AudioSegment.empty()
+        for tmp_file in tmp_files:
+            logger.debug(f"Loading chunk from temporary file: {tmp_file}")
+            segment = AudioSegment.from_file(tmp_file)
+            combined += segment
+
+        # Export to final output file
+        logger.debug(f"Exporting to final output file: {output_file}")
+        combined.export(output_file, format=output_format)
+        logger.debug(f"Final output file exported: {output_file}")
+    finally:
+        # Always delete the temporary files, even if merging/exporting failed,
+        # otherwise they leak on disk on every failed conversion.
+        for tmp_file in tmp_files:
+            if os.path.exists(tmp_file):
+                os.remove(tmp_file)
+        logger.debug(f"Temporary files deleted: {tmp_files}")
         os.remove(tmp_file)
     logger.debug(f"Temporary files deleted: {tmp_files}")
 
