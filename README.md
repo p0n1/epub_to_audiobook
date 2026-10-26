@@ -8,6 +8,7 @@ This project provides a command-line tool to convert EPUB ebooks into audiobooks
 
 ## Recent Updates
 
+- 2026-06-06: Added dual-voice support for mixed Chinese-English content, configurable sentence/paragraph silence intervals, and heading pause detection (OpenAI TTS).
 - 2025-05-23: Added a web interface (WebUI) to the project.
 
 ## Audio Sample
@@ -274,6 +275,20 @@ openai specific:
   --speed SPEED         The speed of the generated audio. Select a value from 0.25 to 4.0. 1.0 is the default.
   --instructions INSTRUCTIONS
                         Instructions for the TTS model. Only supported for 'gpt-4o-mini-tts' model.
+  --english_voice_name ENGLISH_VOICE_NAME
+                        Voice to use for English text segments in mixed Chinese-
+                        English content (OpenAI TTS only). If not specified,
+                        defaults to 'alloy'. Useful when the primary voice
+                        (e.g., kokoro) doesn't handle English pronunciation well.
+  --sentence_interval SENTENCE_INTERVAL
+                        Silence duration in milliseconds inserted between
+                        consecutive sentences within a paragraph (OpenAI TTS
+                        only). 0 means no extra pause beyond what the TTS
+                        engine naturally produces. (default: 0)
+  --paragraph_interval PARAGRAPH_INTERVAL
+                        Silence duration in milliseconds inserted between
+                        paragraphs and after chapter headings/titles (OpenAI
+                        TTS only). (default: 1250)
 
 edge specific:
   --voice_rate VOICE_RATE
@@ -482,6 +497,17 @@ Here are some examples that demonstrate various option combinations:
    python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai --preview --output_text
    ```
 
+4. **OpenAI conversion with dual-voice and configurable pauses (Chinese-English mixed content)**  
+   Uses a Chinese primary voice with an English secondary voice for mixed-language content, with 500ms pause between sentences and 1000ms between paragraphs.
+
+   ```sh
+   python3 main.py "path/to/book.epub" "path/to/output/folder" --tts openai \
+     --model_name kokoro --voice_name zm_yunyang \
+     --english_voice_name am_michael \
+     --sentence_interval 500 --paragraph_interval 1000 \
+     --use_pydub_merge
+   ```
+
 ## Example using an OpenAI-compatible service
 
 It is possible to use an OpenAI-compatible service, like [matatonic/openedai-speech](https://github.com/matatonic/openedai-speech). In that case, it **is required** to set the `OPENAI_BASE_URL` environment variable, otherwise it would just default to the standard OpenAI service. While the compatible service might not require an API key, the OpenAI client still does, so make sure to set it to something nonsensical.
@@ -587,6 +613,15 @@ python main.py path/to/epub output-dir --tts openai --voice_name "af_bella(3)+af
 ```
 Note that passing `--model_name tts-1` parameter **is required** since kokoro breaks with the current default model_name value.
 
+For Chinese-English mixed content with Kokoro, use `--english_voice_name` to enable dual-voice mode (see [Dual-Voice section](#dual-voice-for-mixed-chinese-english-content-openai-tts) for details):
+
+```bash
+python main.py path/to/epub output-dir --tts openai \
+  --model_name kokoro --voice_name zm_yunyang \
+  --english_voice_name am_michael \
+  --use_pydub_merge
+```
+
 Alternatively, you can do the entire set up through docker compose using the [docker compose file set up for kokoro](./docker-compose.kokoro-example.yml).
 
 To do so, open the file with your favorite editor and then:
@@ -597,6 +632,44 @@ To do so, open the file with your favorite editor and then:
 
 
 For more information on the image used for kokoro tts, visit this [repo](https://github.com/remsky/Kokoro-FastAPI).
+
+### Dual-Voice for Mixed Chinese-English Content (OpenAI TTS)
+
+When converting books that contain mixed Chinese and English text (e.g., Chinese translations with inline English names, book titles, or quotations), a single Chinese voice may mispronounce the English words. The `--english_voice_name` option enables **dual-voice mode**: the text is automatically split by language, with Chinese segments read by the primary voice and English segments read by the specified English voice.
+
+**Smart merging**: English fragments shorter than 10 characters (like inline names such as "Hayek" or "List") are kept with the surrounding Chinese voice to avoid excessive voice switching and API calls. Only substantial English passages trigger a voice switch.
+
+```bash
+python3 main.py book.epub output --tts openai \
+  --model_name kokoro --voice_name zm_yunyang \
+  --english_voice_name am_michael \
+  --use_pydub_merge
+```
+
+### Configurable Silence Intervals (OpenAI TTS)
+
+You can control the pause duration between sentences and between paragraphs (including after chapter headings/titles) using two independent settings:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--sentence_interval` | `0` | Silence (ms) between consecutive sentences within a paragraph. `0` = no extra pause. |
+| `--paragraph_interval` | `1250` | Silence (ms) between paragraphs and after chapter headings/titles. |
+
+The chunking hierarchy is: **paragraph** (from newlines/headings) → **sentence** → **language segment** → **max_chars** batch. Consecutive same-voice segments are batched into chunks up to the TTS input limit to minimize API calls.
+
+> **Note**: When using `--sentence_interval` or `--paragraph_interval`, `--use_pydub_merge` is recommended for proper silence insertion between segments.
+
+```bash
+python3 main.py book.epub output --tts openai \
+  --model_name kokoro --voice_name zm_yunyang \
+  --english_voice_name am_michael \
+  --sentence_interval 500 --paragraph_interval 1000 \
+  --use_pydub_merge
+```
+
+### Heading Pause Detection
+
+Chapter headings and subtitles (HTML `<h1>`–`<h6>` tags) are automatically detected and a paragraph-level silence (`--paragraph_interval`) is inserted after them, creating a natural pause between the title and the body text. This works with all TTS providers that support paragraph breaks.
 
 ## Troubleshooting
 

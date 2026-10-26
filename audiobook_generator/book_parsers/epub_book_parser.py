@@ -45,6 +45,15 @@ class EpubBookParser(BaseBookParser):
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")
+            
+            # Extract heading texts and their positions for pause insertion
+            heading_texts = []
+            for heading_tag in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
+                for heading in soup.find_all(heading_tag):
+                    heading_text = heading.get_text(strip=True)
+                    if heading_text:
+                        heading_texts.append(heading_text)
+            
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
@@ -59,8 +68,17 @@ class EpubBookParser(BaseBookParser):
                 raise ValueError(f"Invalid newline mode: {self.config.newline_mode}")
 
             logger.debug(f"Cleaned text step 1: <{cleaned_text[:]}>")
+            
+            # Insert break markers after heading texts for better pause control
+            for heading_text in heading_texts:
+                # Find the heading text in the cleaned text and insert break after it
+                # We look for the heading text followed by potential whitespace/punctuation
+                pattern = re.escape(heading_text) + r"(?=[\s\.\,，。！？])"
+                if re.search(pattern, cleaned_text):
+                    cleaned_text = re.sub(pattern, heading_text + break_string, cleaned_text)
+            
             cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-            logger.debug(f"Cleaned text step 2: <{cleaned_text[:100]}>")
+            logger.debug(f"Cleaned text step 2 (with heading breaks): <{cleaned_text[:100]}>")
 
             # Removes end-note numbers
             if self.config.remove_endnotes:
