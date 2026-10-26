@@ -34,7 +34,7 @@ class AudiobookGenerator:
     def __str__(self) -> str:
         return f"{self.config}"
 
-    def process_chapter(self, idx, title, text, book_parser):
+    def process_chapter(self, idx, title, text, book_author, book_title):
         """Process a single chapter: write text (if needed) and convert to audio."""
         try:
             logger.info(f"Processing chapter {idx}: {title}")
@@ -68,8 +68,14 @@ class AudiobookGenerator:
             )
             output_file = os.path.join(self.config.output_folder, safe_audio_name)
 
+            if self.config.skip_existing and os.path.isfile(output_file):
+                logger.info(
+                    f"⏭️  Skipping chapter {idx}: {title}, output file already exists: {output_file}"
+                )
+                return True
+
             audio_tags = AudioTags(
-                title, book_parser.get_book_author(), book_parser.get_book_title(), idx
+                title, book_author, book_title, idx
             )
             tts_provider.text_to_speech(text, output_file, audio_tags)
 
@@ -82,8 +88,8 @@ class AudiobookGenerator:
 
     def process_chapter_wrapper(self, args):
         """Wrapper for process_chapter to handle unpacking args for imap."""
-        idx, title, text, book_parser = args
-        return idx, self.process_chapter(idx, title, text, book_parser)
+        idx, title, text, book_author, book_title = args
+        return idx, self.process_chapter(idx, title, text, book_author, book_title)
 
     def run(self):
         try:
@@ -135,9 +141,17 @@ class AudiobookGenerator:
                 confirm_conversion()
 
             # Prepare chapters for processing
+            # Extract book metadata once up-front instead of passing the whole
+            # book_parser (and its underlying parsed EPUB, including all embedded
+            # images/binary resources) into every per-chapter task. Doing so would
+            # cause the entire book to be re-pickled and sent to worker processes
+            # once per chapter, causing memory usage to balloon for large books.
+            book_author = book_parser.get_book_author()
+            book_title = book_parser.get_book_title()
+
             chapters_to_process = chapters[self.config.chapter_start - 1 : self.config.chapter_end]
             tasks = [
-                (idx, title, text, book_parser)
+                (idx, title, text, book_author, book_title)
                 for idx, (title, text) in enumerate(
                     chapters_to_process, start=self.config.chapter_start
                 )
