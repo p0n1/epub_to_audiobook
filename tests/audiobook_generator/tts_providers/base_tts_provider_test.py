@@ -4,7 +4,8 @@ from unittest.mock import patch
 from audiobook_generator.tts_providers.azure_tts_provider import AzureTTSProvider
 from audiobook_generator.tts_providers.base_tts_provider import get_tts_provider
 from audiobook_generator.tts_providers.openai_tts_provider import OpenAITTSProvider
-from tests.test_utils import get_azure_config, get_openai_config
+from audiobook_generator.tts_providers.inworld_tts_provider import InworldTTSProvider
+from tests.test_utils import get_azure_config, get_openai_config, get_inworld_config
 
 
 class TestBaseTtsProvider(unittest.TestCase):
@@ -20,6 +21,12 @@ class TestBaseTtsProvider(unittest.TestCase):
         config = get_openai_config()
         tts_provider = get_tts_provider(config)
         self.assertIsInstance(tts_provider, OpenAITTSProvider)
+
+    @patch.dict('os.environ', {'INWORLD_API_KEY': 'fake_key'})
+    def test_get_tts_provider_inworld(self):
+        config = get_inworld_config()
+        tts_provider = get_tts_provider(config)
+        self.assertIsInstance(tts_provider, InworldTTSProvider)
 
     def test_get_tts_provider_invalid(self):
         config = get_openai_config()

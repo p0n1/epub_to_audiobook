@@ -43,3 +43,23 @@ def get_openai_config():
         speed=1.0
     )
     return GeneralConfig(args)
+
+
+def get_inworld_config():
+    args = MagicMock(
+        input_file='examples/The_Life_and_Adventures_of_Robinson_Crusoe.epub',
+        output_folder='output',
+        preview=False,
+        output_text=False,
+        log='INFO',
+        newline_mode='double',
+        chapter_start=1,
+        chapter_end=-1,
+        remove_endnotes=False,
+        tts='inworld',
+        language='en-US',
+        voice_name='voice-1',
+        output_format='mp3',
+        model_name='inworld-tts-1.5-mini',
+    )
+    return GeneralConfig(args)

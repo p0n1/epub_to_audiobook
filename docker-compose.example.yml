@@ -18,6 +18,10 @@ services:
       MS_TTS_REGION: <your_region>
       # or OPENAI_API_KEY
       OPENAI_API_KEY: <your_openai_api_key>
+      # or INWORLD_API_KEY
+      INWORLD_API_KEY: <your_inworld_basic_base64_credential>
+      INWORLD_VOICE_ID: <your_inworld_voice_id>
+      INWORLD_MODEL_ID: <your_inworld_model_id>
     ports:
       - "7860:7860"
     volumes:

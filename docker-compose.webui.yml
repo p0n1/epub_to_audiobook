@@ -19,6 +19,10 @@ services:
       # for custom OpenAI-compatible endpoints
       # OPENAI_BASE_URL: <your_openai_base_url>
       OPENAI_API_KEY: <your_openai_api_key>
+      # for Inworld TTS
+      INWORLD_API_KEY: <your_inworld_basic_base64_credential>
+      INWORLD_VOICE_ID: <your_inworld_voice_id>
+      INWORLD_MODEL_ID: <your_inworld_model_id>
     ports:
       - "7860:7860"
     volumes:
