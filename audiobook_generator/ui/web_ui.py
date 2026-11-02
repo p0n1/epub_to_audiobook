@@ -14,6 +14,8 @@ from audiobook_generator.tts_providers.openai_tts_provider import get_openai_sup
     get_openai_supported_voices, get_openai_instructions_example, get_openai_supported_output_formats
 from audiobook_generator.tts_providers.piper_tts_provider import get_piper_supported_languages, \
     get_piper_supported_voices, get_piper_supported_qualities, get_piper_supported_speakers
+from audiobook_generator.tts_providers.camb_tts_provider import get_camb_supported_models, \
+    get_camb_supported_output_formats
 from audiobook_generator.utils.log_handler import generate_unique_log_path
 from main import main
 
@@ -53,7 +55,8 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
                     azure_language, azure_voice, azure_output_format, azure_break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence):
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence,
+                    camb_model, camb_voice_id, camb_language, camb_output_format, camb_speaking_rate, camb_instructions):
 
     config = GeneralConfig(None)
     config.input_file = input_file.name if hasattr(input_file, 'name') else input_file
@@ -106,6 +109,14 @@ def process_ui_form(input_file, output_dir, worker_count, log_level, output_text
         config.piper_noise_w_scale = piper_noise_w_scale
         config.piper_length_scale = piper_length_scale
         config.piper_sentence_silence = piper_sentence_silence
+    elif selected_tts == "CAMB AI":
+        config.tts = "camb"
+        config.model_name = camb_model
+        config.voice_name = camb_voice_id
+        config.language = camb_language
+        config.output_format = camb_output_format
+        config.speaking_rate = camb_speaking_rate if camb_speaking_rate != 1.0 else None
+        config.camb_instructions = camb_instructions if camb_instructions else None
     else:
         raise ValueError("Unsupported TTS provider selected")
 
@@ -288,6 +299,26 @@ def host_ui(config):
                         with gr.Row(equal_height=True):
                             piper_length_scale = gr.Slider(minimum=0.0, maximum=5.0, step=0.1, label="Audio Length Scale", value=1.0)
                             piper_sentence_silence = gr.Slider(minimum=0.0, maximum=2.0, step=0.1, label="Sentence Silence", value=0.2)
+
+            with gr.Tab("CAMB AI", id="camb_tab_id") as camb_tab:
+                gr.Markdown("It is expected that user configured: `CAMB_API_KEY` in the environment variables. Get your API key at [studio.camb.ai](https://studio.camb.ai).")
+                with gr.Row(equal_height=True):
+                    camb_model = gr.Dropdown(get_camb_supported_models(), label="Speech Model", value="mars-pro",
+                                            interactive=True, info="mars-pro: high-fidelity, mars-flash: low-latency, mars-instruct: instruction-following")
+                    camb_voice_id = gr.Textbox(label="Voice ID", value="147320", interactive=True,
+                                              info="Numeric voice ID. Browse voices at studio.camb.ai")
+                    camb_language = gr.Textbox(label="Language", value="en-us", interactive=True,
+                                             info="BCP-47 language code (e.g. en-us, es-es, fr-fr)")
+                    camb_output_format = gr.Dropdown(get_camb_supported_output_formats(), label="Output Format",
+                                                    value="mp3", interactive=True)
+                with gr.Row(equal_height=True):
+                    camb_speaking_rate = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, label="Speaking Rate", value=1.0,
+                                                  info="Adjust speed of speech output")
+                with gr.Row(equal_height=True):
+                    camb_instructions = gr.TextArea(label="Instructions (mars-instruct only)", interactive=True, lines=3,
+                                                   placeholder="e.g. Warm, clear, and conversational tone")
+                camb_tab.select(on_tab_change, inputs=None, outputs=None)
+
         gr.Markdown("---")
         with gr.Row(equal_height=True):
             gr.Button("Stop").click(
@@ -303,7 +334,8 @@ def host_ui(config):
                     azure_language, azure_voice, azure_output_format, azure_break_duration,
                     edge_language, edge_voice, edge_output_format, proxy, edge_voice_rate, edge_volume, edge_pitch, edge_break_duration,
                     piper_executable_path, piper_docker_image, piper_language, piper_voice, piper_quality, piper_speaker,
-                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence
+                    piper_noise_scale, piper_noise_w_scale, piper_length_scale, piper_sentence_silence,
+                    camb_model, camb_voice_id, camb_language, camb_output_format, camb_speaking_rate, camb_instructions
                 ],
                 outputs=None)
         with gr.Row():

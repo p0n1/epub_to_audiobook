@@ -49,5 +49,9 @@ class GeneralConfig:
         self.piper_length_scale = getattr(args, 'piper_length_scale', None)
         self.piper_sentence_silence = getattr(args, 'piper_sentence_silence', None)
 
+        # TTS provider: CAMB AI specific arguments
+        self.speaking_rate = getattr(args, 'speaking_rate', None)
+        self.camb_instructions = getattr(args, 'camb_instructions', None)
+
     def __str__(self):
         return ",\n".join(f"{key}={value}" for key, value in self.__dict__.items())
