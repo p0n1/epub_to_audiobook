@@ -42,7 +42,11 @@ class EpubBookParser(BaseBookParser):
     def get_chapters(self, break_string) -> List[Tuple[str, str]]:
         chapters = []
         search_and_replaces = self.get_search_and_replaces()
-        for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+        # Read in spine (reading) order; the manifest order can be anything
+        for idref, _ in self.book.spine:
+            item = self.book.get_item_with_id(idref)
+            if item is None or item.get_type() != ebooklib.ITEM_DOCUMENT:
+                continue
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")
             raw = soup.get_text(strip=False)
