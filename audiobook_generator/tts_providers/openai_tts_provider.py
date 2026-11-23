@@ -15,6 +15,14 @@ from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 
 logger = logging.getLogger(__name__)
 
+_RETIRING_OPENAI_TTS_MODELS = {
+    "gpt-4o-mini-tts",
+    "gpt-4o-mini-tts-2025-03-20",
+    "gpt-4o-mini-tts-2025-12-15",
+    "tts-1",
+    "tts-1-hd",
+}
+
 
 def get_openai_supported_output_formats():
     return ["mp3", "aac", "flac", "opus", "wav"]
@@ -58,6 +66,14 @@ class OpenAITTSProvider(BaseTTSProvider):
         super().__init__(config)
 
         self.client = OpenAI(max_retries=4)  # User should set OPENAI_API_KEY environment variable
+        # The retirement does not apply to local OpenAI-compatible endpoints such as Kokoro.
+        if self.client.base_url.host == "api.openai.com" and config.model_name in _RETIRING_OPENAI_TTS_MODELS:
+            logger.warning(
+                "OpenAI is retiring %s on January 6, 2027. "
+                "Its replacement uses the Realtime API, not the Speech API used here. "
+                "For continued audiobook generation, choose another TTS provider such as Edge or Piper.",
+                config.model_name,
+            )
 
     def __str__(self) -> str:
         return super().__str__()
