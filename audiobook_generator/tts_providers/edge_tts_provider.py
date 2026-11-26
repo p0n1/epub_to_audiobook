@@ -19,6 +19,9 @@ from audiobook_generator.tts_providers.base_tts_provider import BaseTTSProvider
 logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 12  # Max_retries constant for network errors
+# edge-tts' receive_timeout does not cover a stalled websocket, so a dropped
+# connection can hang forever; cap each chunk so it fails and gets retried.
+CHUNK_TIMEOUT_SECONDS = 300
 
 
 async def get_supported_voices():
@@ -237,7 +240,9 @@ class EdgeTTSProvider(BaseTTSProvider):
                         pitch=self.config.voice_pitch,
                         proxy=self.config.proxy,
                     )
-                    segment = asyncio.run(communicate.get_audio_segment())
+                    segment = asyncio.run(
+                        asyncio.wait_for(communicate.get_audio_segment(), CHUNK_TIMEOUT_SECONDS)
+                    )
                     segments.append(segment)
                     break  # success
                 except Exception as e:
