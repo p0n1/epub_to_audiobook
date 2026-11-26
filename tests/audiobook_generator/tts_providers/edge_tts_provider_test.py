@@ -1,8 +1,15 @@
+import asyncio
+import os
+import tempfile
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+
+from pydub import AudioSegment
 
 from audiobook_generator.config.general_config import GeneralConfig
-from audiobook_generator.tts_providers.edge_tts_provider import CommWithPauses
+from audiobook_generator.core.audio_tags import AudioTags
+from audiobook_generator.tts_providers import edge_tts_provider
+from audiobook_generator.tts_providers.edge_tts_provider import CommWithPauses, EdgeTTSProvider
 
 
 def get_edge_config():
@@ -154,6 +161,43 @@ class TestEdgeTtsProvider(unittest.TestCase):
         
         parsed = comm.parsed
         self.assertEqual(parsed, ["This is a test without breaks"])
+
+
+class TestEdgeTtsChunkTimeout(unittest.TestCase):
+
+    def _run(self, get_audio_segment):
+        provider = EdgeTTSProvider(get_edge_config())
+        with patch.object(edge_tts_provider, "CHUNK_TIMEOUT_SECONDS", 0.05), \
+             patch.object(edge_tts_provider, "MAX_RETRIES", 2), \
+             patch.object(edge_tts_provider, "sleep", lambda _: None), \
+             patch.object(CommWithPauses, "get_audio_segment", get_audio_segment), \
+             tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "out.mp3")
+            provider.text_to_speech("Hello world.", out, AudioTags("t", "a", "b", 1))
+            return os.path.exists(out)
+
+    def test_stalled_chunk_times_out_and_raises_after_retries(self):
+        calls = []
+
+        async def hang(_self):
+            calls.append(1)
+            await asyncio.sleep(3600)
+
+        with self.assertRaises(asyncio.TimeoutError):
+            self._run(hang)
+        self.assertEqual(len(calls), 2)
+
+    def test_stalled_chunk_is_retried(self):
+        calls = []
+
+        async def hang_once(_self):
+            calls.append(1)
+            if len(calls) == 1:
+                await asyncio.sleep(3600)
+            return AudioSegment.silent(100, 24000)
+
+        self.assertTrue(self._run(hang_once))
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == '__main__':
