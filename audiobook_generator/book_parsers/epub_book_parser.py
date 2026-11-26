@@ -4,12 +4,19 @@ from typing import List, Tuple
 
 import ebooklib
 from bs4 import BeautifulSoup
+from bs4.element import CData, NavigableString
 from ebooklib import epub
 
 from audiobook_generator.book_parsers.base_book_parser import BaseBookParser
 from audiobook_generator.config.general_config import GeneralConfig
 
 logger = logging.getLogger(__name__)
+
+_BLOCK_TAGS = {
+    "p", "div", "h1", "h2", "h3", "h4", "h5", "h6", "li", "ul", "ol", "dl", "dt", "dd",
+    "blockquote", "pre", "table", "tr", "td", "th", "caption", "figure", "figcaption",
+    "section", "article", "aside", "header", "footer", "nav", "body",
+}
 
 
 class EpubBookParser(BaseBookParser):
@@ -45,6 +52,7 @@ class EpubBookParser(BaseBookParser):
         for item in self.book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             content = item.get_content()
             soup = BeautifulSoup(content, "lxml-xml")
+            self._separate_glued_blocks(soup)
             raw = soup.get_text(strip=False)
             logger.debug(f"Raw text: <{raw[:]}>")
 
@@ -117,6 +125,22 @@ class EpubBookParser(BaseBookParser):
                     if '==' in search_and_replace and not search_and_replace.startswith('==') and not search_and_replace.endswith('==') and not search_and_replace.startswith('#'):
                         search_and_replaces = search_and_replaces + [ {'search': r"{}".format(search_and_replace.split('==')[0]), 'replace': r"{}".format(search_and_replace.split('==')[1][:-1])} ]
         return search_and_replaces
+
+    @staticmethod
+    def _separate_glued_blocks(soup) -> None:
+        # Some EPUBs (e.g. Calibre output) have no whitespace between block tags
+        # ("...sim.</p><p>Já..."), so get_text() glues words across paragraphs.
+        # Insert a newline only where two text nodes from different block elements
+        # touch with no whitespace, leaving well-formatted EPUBs unchanged.
+        def block_of(node):
+            return next((p for p in node.parents if p.name in _BLOCK_TAGS), None)
+
+        strings = [s for s in soup.find_all(string=True) if type(s) in (NavigableString, CData)]
+        for prev, cur in zip(strings, strings[1:]):
+            if not prev or not cur or prev[-1].isspace() or cur[0].isspace():
+                continue
+            if block_of(prev) is not block_of(cur):
+                cur.insert_before("\n")
 
     @staticmethod
     def _sanitize_title(title, break_string) -> str:
